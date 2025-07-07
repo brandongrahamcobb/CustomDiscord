@@ -101,12 +101,13 @@ public class SearchWeb implements CustomTool<SearchWebInput, ToolStatus> {
     @Override
     public CompletableFuture<ToolStatus> run(SearchWebInput input) {
         return CompletableFuture.supplyAsync(() -> {
+            String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
             DiscordBot bot = ctx.getBean(DiscordBot.class);
             JDA api = bot.completeGetJDA().join();
             String query = input.getQuery();
             
             if (query == null || query.trim().isEmpty()) {
-                return new ToolStatusWrapper("Empty query provided. No search performed.", true, "Empty query provided. No search performed.");
+                return new ToolStatusWrapper("Empty query provided. No search performed.", true, toolCall);
             }
             
             if (query.length() > MAX_QUERY_LENGTH) {
@@ -119,11 +120,9 @@ public class SearchWeb implements CustomTool<SearchWebInput, ToolStatus> {
                 String content = results.isEmpty()
                 ? "No results found."
                 : "Search results:\n" + String.join("\n", results);
-                chatMemory.add("assistant", new AssistantMessage("{\"tool\":" + "\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}"));
-                chatMemory.add("user", new AssistantMessage("{\"tool\":" + "\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}"));
-                return new ToolStatusWrapper(content, true, content);
+                return new ToolStatusWrapper(content, true, toolCall);
             } catch (Exception e) {
-                return new ToolStatusWrapper("Search failed: " + e.getMessage(), false, "Search failed: " + e.getMessage());
+                return new ToolStatusWrapper("Search failed: " + e.getMessage(), false, toolCall);
             }
         });
     }

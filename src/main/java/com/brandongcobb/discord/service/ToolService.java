@@ -38,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @Service
-
 public class ToolService {
 
     @Autowired
@@ -108,7 +107,7 @@ public class ToolService {
         return listChannels.run(input);
     }
     
-    @Tool(name = "list_roles", description = "List channels in a guild")
+    @Tool(name = "list_roles", description = "List roles in a guild")
     public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input) {
         return listRoles.run(input);
     }

@@ -127,11 +127,12 @@ public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
     public CompletableFuture<ToolStatus> run(GetGuildInfoInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 DiscordBot bot = ctx.getBean(DiscordBot.class);
                 JDA api = bot.completeGetJDA().join();
                 Guild guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
-                    return new ToolStatusWrapper("Guild not found or unavailable", false, "Guild not found or unavailable");
+                    return new ToolStatusWrapper("Guild not found or unavailable", false, toolCall);
                 }
                 ObjectNode result = mapper.createObjectNode();
                 boolean includeAll = Boolean.TRUE.equals(input.getIncludeAll());
@@ -185,10 +186,10 @@ public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
                 if (includeAll || (fields != null && fields.contains("iconUrl"))) {
                     result.put("iconUrl", guild.getIconUrl() != null ? guild.getIconUrl() : "");
                 }
-                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 return new ToolStatusWrapper(result.toPrettyString(), true, toolCall);
             } catch (Exception e) {
-                return new ToolStatusWrapper("Unexpected error: " + e.getMessage(), false, "IO error: " + e.getMessage());
+                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
+                return new ToolStatusWrapper("Unexpected error: " + e.getMessage(), false, toolCall);
             }
         });
     }

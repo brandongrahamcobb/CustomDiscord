@@ -105,11 +105,12 @@ public class ListRoles implements CustomTool<ListRolesInput, ToolStatus> {
     public CompletableFuture<ToolStatus> run(ListRolesInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 DiscordBot bot = ctx.getBean(DiscordBot.class);
                 JDA api = bot.completeGetJDA().join();
                 Guild guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
-                    return new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, "Guild not found: " + input.getGuildId());
+                    return new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, toolCall);
                 }
 
                 List<Role> roles = guild.getRoles();
@@ -141,14 +142,14 @@ public class ListRoles implements CustomTool<ListRolesInput, ToolStatus> {
                 try {
                     jsonResult = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
                 } catch (Exception e) {
-                    return new ToolStatusWrapper("Error serializing result: " + e.getMessage(), false, "Error serializing result: " + e.getMessage());
+                    return new ToolStatusWrapper("Error serializing result: " + e.getMessage(), false, toolCall);
                 }
 
-                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 return new ToolStatusWrapper(jsonResult, true, toolCall);
                 
             } catch (Exception e) {
-                return new ToolStatusWrapper("Unexpected error: " + e.getMessage(), false, "IO error: " + e.getMessage());
+                String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
+                return new ToolStatusWrapper("Unexpected error: " + e.getMessage(), false, toolCall);
             }
         });
     }

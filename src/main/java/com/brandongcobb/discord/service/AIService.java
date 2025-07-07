@@ -64,7 +64,6 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 @Service
-
 public class AIService {
     
     private EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
