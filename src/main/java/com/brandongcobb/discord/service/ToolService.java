@@ -40,7 +40,9 @@ public class ToolService {
 
     private CreateChannel createChannel;
     private GetGuildInfo getGuildInfo;
+    private GetMemberInfo getMemberInfo;
     private ListChannels listChannels;
+    private ListMembers listMembers;
     private ListRoles listRoles;
     private ModerateMember moderateMember;
     private ModifyChannel modifyChannel;
@@ -55,7 +57,9 @@ public class ToolService {
     public ToolService(ChatMemory chatMemory,
                        CreateChannel createChannel,
                        GetGuildInfo getGuildInfo,
+                       GetMemberInfo getMemberInfo,
                        ListChannels listChannels,
+                       ListMembers listMembers,
                        ListRoles listRoles,
                        ModerateMember moderateMember,
                        ModifyChannel modifyChannel,
@@ -64,7 +68,9 @@ public class ToolService {
         this.chatMemory = chatMemory;
         this.createChannel = createChannel;
         this.getGuildInfo = getGuildInfo;
+        this.getMemberInfo = getMemberInfo;
         this.listChannels = listChannels;
+        this.listMembers = listMembers;
         this.listRoles = listRoles;
         this.moderateMember  = moderateMember;
         this.modifyChannel = modifyChannel;
@@ -121,9 +127,19 @@ public class ToolService {
         return getGuildInfo.run(input);
     }
     
+    @Tool(name = "get_member_info", description = "Get information about a guild member")
+    public CompletableFuture<ToolStatus> getMemberInfo(GetMemberInfoInput input) {
+        return getMemberInfo.run(input);
+    }
+    
     @Tool(name = "list_channels", description = "List channels in a guild")
     public CompletableFuture<ToolStatus> listChannels(ListChannelsInput input) {
         return listChannels.run(input);
+    }
+    
+    @Tool(name = "list_members", description = "List members in a guild")
+    public CompletableFuture<ToolStatus> listMembers(ListMembersInput input) {
+        return listMembers.run(input);
     }
     
     @Tool(name = "list_roles", description = "List roles in a guild")
