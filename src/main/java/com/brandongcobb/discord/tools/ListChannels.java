@@ -41,19 +41,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
-
 public class ListChannels implements CustomTool<ListChannelsInput, ToolStatus> {
     
-    @Autowired
-    private ApplicationContext ctx;
-    
     private JDA api;
+    private ApplicationContext ctx;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
 
     @Autowired
-    public ListChannels(ChatMemory chatMemory) {
+    public ListChannels(ApplicationContext ctx, ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
+        this.ctx = ctx;
     }
 
     /*

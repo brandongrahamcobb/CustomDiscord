@@ -214,14 +214,14 @@ public class DiscordService {
     
     private CompletableFuture<Void> completeEStep(MetadataContainer response, boolean firstRun, GuildChannel channel, long senderId) {
         LOGGER.fine("Starting E-step...");
-        if (System.getenv("DISCORD_PROVIDER").equals("google")) {
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                e.printStackTrace();
-            }
-        }
+//        if (System.getenv("DISCORD_PROVIDER").equals("google")) {
+//            try {
+//                Thread.sleep(60000);
+//            } catch (InterruptedException e) {
+//                Thread.currentThread().interrupt();
+//                e.printStackTrace();
+//            }
+//        }
         return new MetadataUtils(response).completeGetContent().thenCompose(contentStr -> {
             String finishReason = new OpenAIUtils(response).completeGetFinishReason().join();
             if (finishReason != null) {
@@ -239,23 +239,7 @@ public class DiscordService {
                     });
                 } else {
                     LOGGER.finer("No tools to run, falling back to user input.");
-                    waitingForInput = true;
-                    nextInputFuture = new CompletableFuture<>();
-                    if (System.getenv("DISCORD_PROVIDER").equals("google")) {
-                        try {
-                            Thread.sleep(60000);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            e.printStackTrace();
-                        }
-                    }
-                    return nextInputFuture.thenCompose(userInput -> {
-                        chatMemory.add("assistant", new UserMessage(userInput));
-                        chatMemory.add(String.valueOf(senderId), new UserMessage(userInput));
-                        originalDirective = userInput;
-                        return completeRStepWithTimeout(false, channel, senderId)
-                            .thenCompose(resp -> completeEStep(resp, false, channel, senderId));
-                    });
+                    return null;
                 }
             }
             return CompletableFuture.completedFuture(null);

@@ -73,16 +73,30 @@ public class EventListeners extends ListenerAdapter implements Cog {
             LOGGER.finer("Skipped: Message author is a bot");
             return;
         }
+
+        // Ignore messages that start with the command prefix (e.g., "!")
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
         if (prefix != null && message.getContentRaw().startsWith(prefix)) {
             LOGGER.finer("Skipped: Message starts with command prefix");
             return;
         }
+
+        // If it's a reply, ignore it unless it's a reply to this bot
         if (message.getReferencedMessage() != null) {
-            if (!message.getReferencedMessage().getAuthor().getId().equals(event.getJDA().getSelfUser().getId())) {
+            String repliedToId = message.getReferencedMessage().getAuthor().getId();
+            String selfId = event.getJDA().getSelfUser().getId();
+            if (!repliedToId.equals(selfId)) {
                 LOGGER.finer("Skipped: Reply not to this bot");
                 return;
             }
+        }
+
+        // If not a reply, check if the message mentions this bot explicitly
+        if (message.getMentions().isMentioned(event.getJDA().getSelfUser())) {
+            LOGGER.finer("Message mentions the bot. Proceeding...");
+        } else if (message.getReferencedMessage() == null) {
+            LOGGER.finer("Skipped: Message neither replies to nor mentions the bot");
+            return;
         }
         long senderId = event.getAuthor().getIdLong();
         List<Attachment> attachments = message.getAttachments();

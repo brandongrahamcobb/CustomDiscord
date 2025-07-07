@@ -41,6 +41,14 @@ import java.util.logging.Logger;
 
 public class ToolService {
 
+    @Autowired
+    private GetGuildInfo getGuildInfo;
+    @Autowired
+    private ListChannels listChannels;
+    @Autowired
+    private ListRoles listRoles;
+    @Autowired
+    private SearchWeb searchWeb;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
@@ -92,22 +100,22 @@ public class ToolService {
      */
     @Tool(name = "get_guild_info", description = "Get information about a guild")
     public CompletableFuture<ToolStatus> getGuildInfo(GetGuildInfoInput input) {
-        return new GetGuildInfo(chatMemory).run(input);
+        return getGuildInfo.run(input);
     }
     
     @Tool(name = "list_channels", description = "List channels in a guild")
-    public CompletableFuture<ToolStatus> getGuildInfo(ListChannelsInput input, DiscordBot bot) {
-        return new ListChannels(chatMemory).run(input);
+    public CompletableFuture<ToolStatus> listChannels(ListChannelsInput input) {
+        return listChannels.run(input);
     }
     
     @Tool(name = "list_roles", description = "List channels in a guild")
-    public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input, DiscordBot bot) {
-        return new ListRoles(chatMemory).run(input);
+    public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input) {
+        return listRoles.run(input);
     }
 
     @Tool(name = "search_web", description = "Search the web for matching criteria")
-    public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input, DiscordBot bot) {
-        return new SearchWeb(chatMemory).run(input);
+    public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input) {
+        return searchWeb.run(input);
     }
 }
 

@@ -56,6 +56,7 @@ public class DiscordBot {
 
     @Autowired
     public DiscordBot(ApplicationContext context, JDA api) {
+        this.api = api;
         Map<String, Cog> cogs = context.getBeansOfType(Cog.class);
         for (Cog cog : cogs.values()) {
             cog.register(api, this);

@@ -212,11 +212,11 @@ public class CustomMCPServer {
     }
 
     @Autowired
-    public void initializeTools(ToolService toolService) {
-        toolService.registerTool(new GetGuildInfo(chatMemory));
-        toolService.registerTool(new ListChannels(chatMemory));
-        toolService.registerTool(new ListRoles(chatMemory));
-        toolService.registerTool(new SearchWeb(chatMemory));
+    public void initializeTools(ToolService toolService, GetGuildInfo getGuildInfo, ListChannels listChannels, ListRoles listRoles, SearchWeb searchWeb) {
+        toolService.registerTool(getGuildInfo);
+        toolService.registerTool(listChannels);
+        toolService.registerTool(listRoles);
+        toolService.registerTool(searchWeb);
     }
 
     public static class ToolWrapper {
