@@ -97,6 +97,7 @@ public class DiscordService {
         ToolResponseMessage toolMsg = new ToolResponseMessage(List.of(response));
         ToolResponseMessage.ToolResponse otherResponse = new ToolResponseMessage.ToolResponse(uuid, "tool", content.length() <= 500 ? content : content.substring(0, 500));
         ToolResponseMessage otherToolMsg = new ToolResponseMessage(List.of(response));
+        chatMemory.add(String.valueOf(senderId), toolMsg);
         chatMemory.add(String.valueOf(senderId), otherToolMsg);
     }
     /*
@@ -403,8 +404,8 @@ public class DiscordService {
         if (userInput == null || userInput.isBlank()) {
             return CompletableFuture.completedFuture(null);
         }
-        originalDirective = userInput;
-        chatMemory.add(String.valueOf(senderId), new AssistantMessage(userInput));
+        originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
+        chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
         userInput = null;
         return completeRStepWithTimeout(firstRun, channel, senderId)
             .thenCompose(resp ->

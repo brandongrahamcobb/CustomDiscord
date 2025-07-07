@@ -114,7 +114,7 @@ public class AIService {
                 case "deprecated":
                     body.put("model", model);
                     body.put("max_completion_tokens", tokens);
-                    if (System.getenv("CLI_PROVIDER").equals("null")) {
+                    if (System.getenv("DISCORD_PROVIDER").equals("openai")) {
                         systemMsg.put("role", "system");
                         systemMsg.put("content", instructions);
                         messages.add(systemMsg);

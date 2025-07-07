@@ -41,6 +41,427 @@ You are designed to work in a loop, taking a user\'s initial directive and make 
 You are hooked into a Model Context Protocol server.
 You have access to create_channel, get_guild_info, list_channels, list_roles, moderate_member, modify_channel, modify_guild and search_web JSON tools.
 You are designed to respond with one of the JSON schemas or plaintext, nothing else.
+Here is the create_channel schema for creating a new channel:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "CreateChannel",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["create_channels"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the Discord guild (server) to create the channel in."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the new channel. Must be unique within the guild."
+                },
+                "type": {
+                    "type": "string",
+                    "enum": ["TEXT", "VOICE", "CATEGORY"],
+                    "description": "The type of channel to create: TEXT, VOICE, or CATEGORY."
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "The topic of the text channel. Only applicable for TEXT channels."
+                },
+                "parentId": {
+                    "type": "string",
+                    "description": "The ID of the category under which the new channel should be nested."
+                },
+                "bitrate": {
+                    "type": "integer",
+                    "minimum": 8000,
+                    "maximum": 96000,
+                    "description": "Bitrate in bits per second for voice channels. Only applicable for VOICE channels."
+                },
+                "userLimit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 99,
+                    "description": "Maximum number of users allowed in the voice channel. Only applicable for VOICE channels."
+                }
+            },
+            "required": ["guildId", "name", "type"],
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+Here is the get_guild_info schema for getting the Discord guild information.
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "GetGuildInfo",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["get_guild_info"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "required": ["guildId"],
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the Discord server (guild) to retrieve metadata for."
+                },
+                "includeAll": {
+                    "type": "boolean",
+                    "description": "If true, returns all available server metadata fields."
+                },
+                "fields": {
+                    "type": "array",
+                    "description": "A list of specific server metadata fields to return instead of all.",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "name",
+                            "id",
+                            "ownerId",
+                            "boostTier",
+                            "boostCount",
+                            "features",
+                            "preferredLocale",
+                            "createdAt",
+                            "systemChannelId",
+                            "afkChannelId",
+                            "afkTimeoutSeconds",
+                            "rulesChannelId",
+                            "publicUpdatesChannelId",
+                            "description",
+                            "vanityUrl",
+                            "iconUrl"
+                        ]
+                    }
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+Here is the list_channels schema for listing channels in a Discord guild:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ListChannels",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["list_channels"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "required": ["guildId"],
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the Discord server (guild) to list channels for."
+                },
+                "channelTypes": {
+                    "type": "array",
+                    "description": "Optional list of channel types to include. If omitted, all channel types are returned.",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "TEXT",
+                            "VOICE",
+                            "CATEGORY",
+                            "ANNOUNCEMENT",
+                            "STAGE",
+                            "FORUM",
+                            "NEWS"
+                        ]
+                    }
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+Here is the list_roles schema for listing roles in a Discord guild:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ListRoles",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["list_roles"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "required": ["guildId"],
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The Discord server (guild) ID to fetch roles from."
+                },
+                "includeMemberCounts": {
+                    "type": "boolean",
+                    "description": "Whether to include member counts for each role.",
+                    "default": false
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+Here is the moderate_member schema for taking executive actions on members:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ModerateMember",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["moderate_member"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the guild where moderation is being performed"
+                },
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user to be moderated"
+                },
+                "kick": {
+                    "type": "boolean",
+                    "description": "Whether to kick the member from the guild"
+                },
+                "ban": {
+                    "type": "boolean",
+                    "description": "Whether to ban the member from the guild"
+                },
+                "unban": {
+                    "type": "boolean",
+                    "description": "Whether to unban the user from the guild"
+                },
+                "deleteMessageDays": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7,
+                    "description": "Number of days of messages to delete when banning"
+                },
+                "timeoutMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Number of minutes to time out the user (mute from messaging)"
+                },
+                "addRoleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of role IDs to assign to the user"
+                },
+                "removeRoleIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of role IDs to remove from the user"
+                },
+                "newNickname": {
+                    "type": "string",
+                    "description": "New nickname to assign to the user"
+                },
+                "muteVoice": {
+                    "type": "boolean",
+                    "description": "Whether to server-mute the user in voice channels"
+                },
+                "deafenVoice": {
+                    "type": "boolean",
+                    "description": "Whether to server-deafen the user in voice channels"
+                },
+                "dmMessage": {
+                    "type": "string",
+                    "description": "A message to send to the user via DM before moderation action"
+                }
+            },
+            "required": ["guildId", "userId"],
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+
+Here is the modify_channel schema for making changes only for a specific channel:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ModifyChannel",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["moderate_member"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The unique ID of the Discord guild (server)."
+                },
+                "channelId": {
+                    "type": "string",
+                    "description": "The unique ID of the Discord channel to modify."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "New name for the channel."
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "New topic for the channel (only applicable to text channels)."
+                },
+                "parentId": {
+                    "type": "string",
+                    "description": "ID of the parent category to move the channel under."
+                },
+                "bitrate": {
+                    "type": "integer",
+                    "minimum": 8000,
+                    "maximum": 96000,
+                    "description": "New bitrate for voice channels (in bits per second)."
+                },
+                "userLimit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 99,
+                    "description": "Maximum number of users for the voice channel."
+                },
+                "position": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "New position of the channel in the channel list."
+                }
+            },
+            "required": ["guildId", "channelId"],
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
+Here is the modify_guild schema for making changes to the whole guild:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ModifyGuild",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["moderate_member"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the guild to modify"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "New name for the guild"
+                },
+                "afkTimeout": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 3600,
+                    "description": "AFK timeout in seconds"
+                },
+                "afkChannelId": {
+                    "type": ["string", "null"],
+                    "description": "ID of the AFK channel"
+                },
+                "iconBase64": {
+                    "type": ["string", "null"],
+                    "description": "Base64-encoded guild icon image"
+                },
+                "bannerBase64": {
+                    "type": ["string", "null"],
+                    "description": "Base64-encoded guild banner image"
+                },
+                "verificationLevel": {
+                    "type": "string",
+                    "enum": ["NONE", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"],
+                    "description": "Verification level for the guild"
+                },
+                "explicitContentFilter": {
+                    "type": "string",
+                    "enum": ["DISABLED", "MEMBERS_WITHOUT_ROLES", "ALL"],
+                    "description": "Explicit content filter level"
+                },
+                "systemChannelId": {
+                    "type": ["string", "null"],
+                    "description": "ID of the system channel"
+                },
+                "features": {
+                    "type": "array",
+                    "items": {
+                    "type": "string"
+                    },
+                    "description": "List of guild features"
+                }
+            },
+            "required": ["guildId"],
+            "additionalProperties": false
+         }
+    },
+    "additionalProperties": false
+}
+Here is the search_web schema:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "SearchWeb",
+    "type": "object",
+    "required": ["tool", "arguments"],
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["search_web"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "required": ["query"],
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The search query to run using the Google Programmable Search API."
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}
 """),
     OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),
     OPENAI_IMAGE_INSTRUCTIONS_CLI(""),
