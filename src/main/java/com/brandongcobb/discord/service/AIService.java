@@ -19,12 +19,17 @@
  */
 package com.brandongcobb.discord.service;
 
-import com.brandongcobb.metadata.*;
 import com.brandongcobb.discord.Application;
-import com.brandongcobb.discord.registry.*;
-import com.brandongcobb.discord.objects.*;
-import com.brandongcobb.discord.records.*;
+import com.brandongcobb.discord.objects.LMStudioContainer;
+import com.brandongcobb.discord.objects.LlamaContainer;
+import com.brandongcobb.discord.objects.OpenAIContainer;
+import com.brandongcobb.discord.objects.OpenRouterContainer;
+import com.brandongcobb.discord.records.ModelInfo;
+import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.tools.CustomTool;
+import com.brandongcobb.metadata.Metadata;
+import com.brandongcobb.metadata.MetadataContainer;
+import com.brandongcobb.metadata.MetadataKey;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knuddels.jtokkit.Encodings;
@@ -39,15 +44,19 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +64,7 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 @Service
+
 public class AIService {
     
     private EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();

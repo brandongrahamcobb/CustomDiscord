@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -51,6 +52,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+
 public class MessageService {
 
     private Lock lock;
@@ -58,8 +60,7 @@ public class MessageService {
     private File tempDirectory;
     private JDA api;
     
-    public MessageService(DiscordBot bot) {
-        this.api = bot.completeGetJDA().join();
+    public MessageService() {
         this.tempDirectory = new File(System.getProperty("java.io.tmpdir"));
     }
     

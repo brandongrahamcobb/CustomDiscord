@@ -19,10 +19,14 @@
 package com.brandongcobb.discord;
 
 import net.dv8tion.jda.api.JDA;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Handler;
@@ -32,8 +36,8 @@ import java.util.logging.Logger;
 @SpringBootApplication
 public class Application {
    
+    
     private JDA api;
-    private ApplicationContext ctx;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     public static final String BLURPLE = "\033[38;5;61m";
     public static final String BRIGHT_BLUE = "\u001B[94m";
@@ -55,13 +59,13 @@ public class Application {
     public static final String VIOLET = "\033[38;5;93m";
     public static final String WHITE = "\u001B[37m";
     public static final String YELLOW = "\u001B[33m";
-    
+
     public static void main(String[] args) {
-        LOGGER.setLevel(Level.OFF);
+        LOGGER.setLevel(Level.FINER);
         for (Handler h : LOGGER.getParent().getHandlers()) {
-            h.setLevel(Level.OFF);
+            h.setLevel(Level.FINER);
         }
-        ApplicationContext ctx = new SpringApplicationBuilder(Application.class).run(args);
+        ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
     }
     
     @Bean

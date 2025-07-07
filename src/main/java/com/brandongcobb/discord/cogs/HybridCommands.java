@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 public class HybridCommands extends ListenerAdapter implements Cog {
 
     private JDA api;
-    private Application app;
     private DiscordBot bot;
     private ModelRegistry registry = new ModelRegistry();
     

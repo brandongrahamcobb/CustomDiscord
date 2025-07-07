@@ -20,57 +20,53 @@ package com.brandongcobb.discord.component.bot;
 
 import com.brandongcobb.discord.Application;
 import com.brandongcobb.discord.cogs.Cog;
+import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Component
 public class DiscordBot {
 
     private JDA api;
-    private DiscordBot bot;
+    private Map<String, Cog> cogs;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ReentrantLock lock = new ReentrantLock();
+    private final Set<ListenerAdapter> activeListeners = new HashSet<>();
 
     @Autowired
-    public DiscordBot(ApplicationContext context) {
-        this.bot = this;
-        String apiKey = System.getenv("DISCORD_API_KEY");
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            throw new IllegalArgumentException("Discord API Key is null or empty");
+    public DiscordBot(ApplicationContext context, JDA api) {
+        Map<String, Cog> cogs = context.getBeansOfType(Cog.class);
+        for (Cog cog : cogs.values()) {
+            cog.register(api, this);
         }
-        try {
-            this.api = JDABuilder.createDefault(apiKey,
-                        GatewayIntent.GUILD_MESSAGES,
-                        GatewayIntent.MESSAGE_CONTENT,
-                        GatewayIntent.GUILD_MEMBERS)
-                    .setActivity(Activity.playing("I take pharmacology personally."))
-                    .build();
-            Map<String, Cog> cogs = context.getBeansOfType(Cog.class);
-            for (Cog cog : cogs.values()) {
-                cog.register(api, this);
-            }
-            LOGGER.finer("Discord bot successfully initialized.");
-            this.api.awaitReady();
-        } catch (Exception e) {
-            LOGGER.severe("Error during DiscordBot setup: " + e);
-        }
+        LOGGER.finer("Discord bot successfully initialized.");
     }
 
     @Bean
     public CompletableFuture<DiscordBot> completeGetBot() {
         return CompletableFuture.supplyAsync(() -> {
-            return this.bot;
+            return this;
         });
     }
 
@@ -80,4 +76,5 @@ public class DiscordBot {
             return this.api;
         });
     }
+
 }

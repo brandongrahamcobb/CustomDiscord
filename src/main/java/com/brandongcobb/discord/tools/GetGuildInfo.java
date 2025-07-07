@@ -24,29 +24,31 @@ import com.brandongcobb.discord.domain.ToolStatusWrapper;
 import com.brandongcobb.discord.domain.input.GetGuildInfoInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+
 public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
+    
+    @Autowired
+    private ApplicationContext ctx;
     
     private JDA api;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
 
     @Autowired
-    public GetGuildInfo(DiscordBot bot, ChatMemory chatMemory) {
-        this.api = bot.completeGetJDA().join();
+    public GetGuildInfo(ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
     }
 
@@ -125,6 +127,8 @@ public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
     public CompletableFuture<ToolStatus> run(GetGuildInfoInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                DiscordBot bot = ctx.getBean(DiscordBot.class);
+                JDA api = bot.completeGetJDA().join();
                 Guild guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
                     return new ToolStatusWrapper("Guild not found or unavailable", false, "Guild not found or unavailable");

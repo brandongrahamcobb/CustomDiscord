@@ -24,6 +24,7 @@ import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.service.AIService;
 import com.brandongcobb.discord.service.DiscordService;
 import com.brandongcobb.discord.service.MessageService;
+import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
@@ -32,6 +33,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -39,11 +41,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @Component
+
 public class EventListeners extends ListenerAdapter implements Cog {
     
     public AIService ais;
     private JDA api;
-    private Application app;
     private DiscordBot bot;
     private DiscordService dis;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
@@ -51,26 +53,19 @@ public class EventListeners extends ListenerAdapter implements Cog {
     private ModelRegistry registry = new ModelRegistry();
     
     @Autowired
-    public EventListeners(AIService ais, Application app, DiscordService dis, MessageService mess) {
+    public EventListeners(AIService ais, DiscordService dis, MessageService mess) {
         this.ais = ais;
-        this.app = app;
         this.dis = dis;
         this.mess = mess;
     }
-    
+
     @Override
-    public void register(JDA api, DiscordBot bot) {
+    public void register (JDA api, DiscordBot bot) {
         this.api = api;
         this.bot = bot.completeGetBot().join();
         api.addEventListener(this);
-        api.addEventListener(new ListenerAdapter() {
-            @Override
-            public void onReady(ReadyEvent event) {
-                LOGGER.finer("I've always wanted to do this.");
-            }
-        });
     }
-
+    
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
@@ -106,5 +101,7 @@ public class EventListeners extends ListenerAdapter implements Cog {
             return null;
         });
     }
+    
+    
 }
             

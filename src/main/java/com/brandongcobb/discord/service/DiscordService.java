@@ -19,24 +19,20 @@
 
 package com.brandongcobb.discord.service;
 
-import com.brandongcobb.metadata.Metadata;
-import com.brandongcobb.metadata.MetadataContainer;
-import com.brandongcobb.metadata.MetadataKey;
 import com.brandongcobb.discord.Application;
 import com.brandongcobb.discord.component.bot.DiscordBot;
-import com.brandongcobb.discord.cogs.*;
 import com.brandongcobb.discord.component.server.CustomMCPServer;
 import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.utils.handlers.MetadataUtils;
 import com.brandongcobb.discord.utils.handlers.OpenAIUtils;
+import com.brandongcobb.metadata.Metadata;
+import com.brandongcobb.metadata.MetadataContainer;
+import com.brandongcobb.metadata.MetadataKey;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -44,6 +40,7 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -62,6 +59,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+
 public class DiscordService {
 
     private AIService ais;
@@ -84,11 +82,9 @@ public class DiscordService {
     private volatile boolean waitingForInput = false;
     
     @Autowired
-    public DiscordService(DiscordBot bot, CustomMCPServer server, ToolService toolService) {
+    public DiscordService(CustomMCPServer server, MessageService mess, ToolService toolService) {
         this.ais = new AIService(chatMemory, toolService);
-        this.bot = bot;
-        this.api = bot.completeGetJDA().join();
-        this.mess = new MessageService(bot);
+        this.mess = mess;
         this.toolService = toolService;
         this.mcpServer = server;
     }
@@ -438,5 +434,5 @@ public class DiscordService {
                     )
             );
     }
-    
+
 }

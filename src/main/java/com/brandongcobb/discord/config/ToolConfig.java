@@ -22,6 +22,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ import java.util.List;
 public class ToolConfig {
 
     @Bean
+    
     public List<ToolCallback> toolCallbacks(ToolService toolService) {
         return List.of(ToolCallbacks.from(toolService));
     }

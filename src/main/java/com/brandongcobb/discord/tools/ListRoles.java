@@ -21,7 +21,6 @@ package com.brandongcobb.discord.tools;
 import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.ToolStatusWrapper;
-import com.brandongcobb.discord.domain.input.ListChannelsInput;
 import com.brandongcobb.discord.domain.input.ListRolesInput;
 import com.brandongcobb.discord.domain.output.ListRolesResult;
 import com.brandongcobb.discord.domain.output.RoleInfo;
@@ -32,6 +31,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -41,13 +42,15 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class ListRoles implements CustomTool<ListRolesInput, ToolStatus> {
     
+    @Autowired
+    private ApplicationContext ctx;
+    
     private JDA api;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
 
     @Autowired
-    public ListRoles(DiscordBot bot, ChatMemory chatMemory) {
-        this.api = bot.completeGetJDA().join();
+    public ListRoles(ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
     }
 
@@ -102,6 +105,8 @@ public class ListRoles implements CustomTool<ListRolesInput, ToolStatus> {
     public CompletableFuture<ToolStatus> run(ListRolesInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                DiscordBot bot = ctx.getBean(DiscordBot.class);
+                JDA api = bot.completeGetJDA().join();
                 Guild guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
                     return new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, "Guild not found: " + input.getGuildId());

@@ -21,16 +21,14 @@ package com.brandongcobb.discord.service;
 import com.brandongcobb.discord.Application;
 import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
-import com.brandongcobb.discord.domain.input.GetGuildInfoInput;
-import com.brandongcobb.discord.domain.input.ListChannelsInput;
-import com.brandongcobb.discord.domain.input.SearchWebInput;
-import com.brandongcobb.discord.domain.input.ToolInput;
+import com.brandongcobb.discord.domain.input.*;
 import com.brandongcobb.discord.tools.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -40,17 +38,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @Service
+
 public class ToolService {
-    
-    private DiscordBot bot;
+
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
     private final Map<String, CustomTool<?, ?>> tools = new HashMap<>();
 
     @Autowired
-    public ToolService(DiscordBot bot, ChatMemory chatMemory) {
-        this.bot = bot;
+    public ToolService(ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
     }
     
@@ -95,17 +92,22 @@ public class ToolService {
      */
     @Tool(name = "get_guild_info", description = "Get information about a guild")
     public CompletableFuture<ToolStatus> getGuildInfo(GetGuildInfoInput input) {
-        return new GetGuildInfo(bot, chatMemory).run(input);
+        return new GetGuildInfo(chatMemory).run(input);
     }
     
     @Tool(name = "list_channels", description = "List channels in a guild")
-    public CompletableFuture<ToolStatus> getGuildInfo(ListChannelsInput input) {
-        return new ListChannels(bot, chatMemory).run(input);
+    public CompletableFuture<ToolStatus> getGuildInfo(ListChannelsInput input, DiscordBot bot) {
+        return new ListChannels(chatMemory).run(input);
+    }
+    
+    @Tool(name = "list_roles", description = "List channels in a guild")
+    public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input, DiscordBot bot) {
+        return new ListRoles(chatMemory).run(input);
     }
 
     @Tool(name = "search_web", description = "Search the web for matching criteria")
-    public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input) {
-        return new SearchWeb(bot, chatMemory).run(input);
+    public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input, DiscordBot bot) {
+        return new SearchWeb(chatMemory).run(input);
     }
 }
 

@@ -28,6 +28,8 @@ import net.dv8tion.jda.api.JDA;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -46,14 +48,17 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class SearchWeb implements CustomTool<SearchWebInput, ToolStatus> {
 
+    @Autowired
+    private ApplicationContext ctx;
+    
+    
     private JDA api;
     private static final int MAX_QUERY_LENGTH = 500;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
     
     @Autowired
-    public SearchWeb(DiscordBot bot, ChatMemory replChatMemory) {
-        this.api = bot.completeGetJDA().join();
+    public SearchWeb(ChatMemory replChatMemory) {
         this.chatMemory = replChatMemory;
     }
     
@@ -96,6 +101,8 @@ public class SearchWeb implements CustomTool<SearchWebInput, ToolStatus> {
     @Override
     public CompletableFuture<ToolStatus> run(SearchWebInput input) {
         return CompletableFuture.supplyAsync(() -> {
+            DiscordBot bot = ctx.getBean(DiscordBot.class);
+            JDA api = bot.completeGetJDA().join();
             String query = input.getQuery();
             
             if (query == null || query.trim().isEmpty()) {

@@ -23,8 +23,7 @@ import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.service.MessageService;
 import com.brandongcobb.discord.service.ToolService;
-import com.brandongcobb.discord.tools.CustomTool;
-import com.brandongcobb.discord.tools.GetGuildInfo;
+import com.brandongcobb.discord.tools.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +35,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.PrintWriter;
@@ -46,22 +46,17 @@ import java.util.logging.Logger;
 
 @Component
 public class CustomMCPServer {
-    
-    private DiscordBot bot;
+
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
+    private final ToolService toolService;
     private boolean initialized = false;
     private final ChatMemory chatMemory;
-    private ToolService toolService;
-    private MessageService mess;
-    private GuildChannel rawChannel;
 
     @Autowired
-    public CustomMCPServer(DiscordBot bot, ChatMemory chatMemory, ToolService toolService) {
-        this.bot = bot;
+    public CustomMCPServer(ChatMemory chatMemory, ToolService toolService) {
         this.chatMemory = chatMemory;
         this.toolService = toolService;
-        initializeTools(bot);
     }
     
     
@@ -217,8 +212,11 @@ public class CustomMCPServer {
     }
 
     @Autowired
-    public void initializeTools(DiscordBot bot) {
-        toolService.registerTool(new GetGuildInfo(bot, chatMemory));
+    public void initializeTools(ToolService toolService) {
+        toolService.registerTool(new GetGuildInfo(chatMemory));
+        toolService.registerTool(new ListChannels(chatMemory));
+        toolService.registerTool(new ListRoles(chatMemory));
+        toolService.registerTool(new SearchWeb(chatMemory));
     }
 
     public static class ToolWrapper {

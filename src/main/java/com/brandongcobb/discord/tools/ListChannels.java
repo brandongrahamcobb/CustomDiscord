@@ -30,24 +30,29 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.entities.templates.TemplateChannel;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-import net.dv8tion.jda.api.entities.templates.TemplateChannel;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
+
 public class ListChannels implements CustomTool<ListChannelsInput, ToolStatus> {
+    
+    @Autowired
+    private ApplicationContext ctx;
     
     private JDA api;
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
 
     @Autowired
-    public ListChannels(DiscordBot bot, ChatMemory chatMemory) {
-        this.api = bot.completeGetJDA().join();
+    public ListChannels(ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
     }
 
@@ -113,6 +118,8 @@ public class ListChannels implements CustomTool<ListChannelsInput, ToolStatus> {
     public CompletableFuture<ToolStatus> run(ListChannelsInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                DiscordBot bot = ctx.getBean(DiscordBot.class);
+                JDA api = bot.completeGetJDA().join();
                 Guild guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
                     return new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, "Guild not found: " + input.getGuildId());
