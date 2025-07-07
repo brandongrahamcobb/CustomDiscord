@@ -39,162 +39,8 @@ You may request the user to make manual changes where it is ideal
 You are Lucy, a Discord bot running Gemma-3-27b-it built by Spawd.
 You are designed to work in a loop, taking a user\'s initial directive and make the changes desired on Discord.
 You are hooked into a Model Context Protocol server.
-You have access to get_guild_info, list_channels, list_roles and search_web JSON tools.
+You have access to create_channel, get_guild_info, list_channels, list_roles, moderate_member, modify_channel, modify_guild and search_web JSON tools.
 You are designed to respond with one of the JSON schemas or plaintext, nothing else.
-Here is the get_guild_info schema:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GetGuildInfo",
-  "type": "object",
-  "required": ["tool", "arguments"],
-  "properties": {
-    "tool": {
-      "type": "string",
-      "enum": ["get_guild_info"],
-      "description": "The name of the tool to invoke."
-    },
-    "arguments":             {
-      "type": "object",
-        "required": ["guildId"],
-        "properties": {
-          "guildId": {
-          "type": "string",
-          "description": "The ID of the Discord server (guild) to retrieve metadata for."
-        },
-        "includeAll": {
-          "type": "boolean",
-          "description": "If true, returns all available server metadata fields."
-        },
-        "fields": {
-          "type": "array",
-          "description": "A list of specific server metadata fields to return instead of all.",
-          "items": {
-            "type": "string",
-            "enum": [
-              "name",
-              "id",
-              "ownerId",
-              "boostTier",
-              "boostCount",
-              "features",
-              "preferredLocale",
-              "createdAt",
-              "systemChannelId",
-              "afkChannelId",
-              "afkTimeoutSeconds",
-              "rulesChannelId",
-              "publicUpdatesChannelId",
-              "description",
-              "vanityUrl",
-              "iconUrl"
-            ]
-          }
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
-Here is the list_channels schema:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ListChannels",
-  "type": "object",
-  "required": ["tool", "arguments"],
-  "properties": {
-    "tool": {
-      "type": "string",
-      "enum": ["list_channels"],
-      "description": "The name of the tool to invoke."
-    },
-    "arguments": {
-      "type": "object",
-      "required": ["guildId"],
-      "properties": {
-        "guildId": {
-          "type": "string",
-          "description": "The ID of the Discord server (guild) to list channels for."
-        },
-        "channelTypes": {
-          "type": "array",
-          "description": "Optional list of channel types to include. If omitted, all channel types are returned.",
-          "items": {
-            "type": "string",
-            "enum": [
-              "TEXT",
-              "VOICE",
-              "CATEGORY",
-              "ANNOUNCEMENT",
-              "STAGE",
-              "FORUM",
-              "NEWS"
-            ]
-          }
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
-Here is the list_roles schema:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ListRoles",
-  "type": "object",
-  "required": ["tool", "arguments"],
-  "properties": {
-    "tool": {
-      "type": "string",
-      "enum": ["list_roles"],
-      "description": "The name of the tool to invoke."
-    },
-    "arguments": {
-      "type": "object",
-      "required": ["guildId"],
-      "properties": {
-        "guildId": {
-          "type": "string",
-          "description": "The Discord server (guild) ID to fetch roles from."
-        },
-        "includeMemberCounts": {
-          "type": "boolean",
-          "description": "Whether to include member counts for each role.",
-          "default": false
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
-Here is the search_web schema:
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "SearchWeb",
-  "type": "object",
-  "required": ["tool", "arguments"],
-  "properties": {
-    "tool": {
-      "type": "string",
-      "enum": ["search_web"],
-      "description": "The name of the tool to invoke."
-    },
-    "arguments": {
-      "type": "object",
-      "required": ["query"],
-      "properties": {
-        "query": {
-          "type": "string",
-          "description": "The search query to run using the Google Programmable Search API."
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
 """),
     OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),
     OPENAI_IMAGE_INSTRUCTIONS_CLI(""),
@@ -629,7 +475,162 @@ You MUST operate under the assumption that only the tools described in the schem
 If you happen to find a pitfall where a tool is required but it does not exist, engage in a conversation with the user about how to create the tool and encourage them to deploy it within your codebase.
 You may request the user to make manual changes where it is ideal
     """),
-    LLAMA_TEXT_INSTRUCTIONS_DISCORD(""),
+    LLAMA_TEXT_INSTRUCTIONS_DISCORD("""
+Here is the get_guild_info schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GetGuildInfo",
+  "type": "object",
+  "required": ["tool", "arguments"],
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["get_guild_info"],
+      "description": "The name of the tool to invoke."
+    },
+    "arguments":             {
+      "type": "object",
+        "required": ["guildId"],
+        "properties": {
+          "guildId": {
+          "type": "string",
+          "description": "The ID of the Discord server (guild) to retrieve metadata for."
+        },
+        "includeAll": {
+          "type": "boolean",
+          "description": "If true, returns all available server metadata fields."
+        },
+        "fields": {
+          "type": "array",
+          "description": "A list of specific server metadata fields to return instead of all.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "name",
+              "id",
+              "ownerId",
+              "boostTier",
+              "boostCount",
+              "features",
+              "preferredLocale",
+              "createdAt",
+              "systemChannelId",
+              "afkChannelId",
+              "afkTimeoutSeconds",
+              "rulesChannelId",
+              "publicUpdatesChannelId",
+              "description",
+              "vanityUrl",
+              "iconUrl"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+Here is the list_channels schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ListChannels",
+  "type": "object",
+  "required": ["tool", "arguments"],
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["list_channels"],
+      "description": "The name of the tool to invoke."
+    },
+    "arguments": {
+      "type": "object",
+      "required": ["guildId"],
+      "properties": {
+        "guildId": {
+          "type": "string",
+          "description": "The ID of the Discord server (guild) to list channels for."
+        },
+        "channelTypes": {
+          "type": "array",
+          "description": "Optional list of channel types to include. If omitted, all channel types are returned.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "VOICE",
+              "CATEGORY",
+              "ANNOUNCEMENT",
+              "STAGE",
+              "FORUM",
+              "NEWS"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+Here is the list_roles schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ListRoles",
+  "type": "object",
+  "required": ["tool", "arguments"],
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["list_roles"],
+      "description": "The name of the tool to invoke."
+    },
+    "arguments": {
+      "type": "object",
+      "required": ["guildId"],
+      "properties": {
+        "guildId": {
+          "type": "string",
+          "description": "The Discord server (guild) ID to fetch roles from."
+        },
+        "includeMemberCounts": {
+          "type": "boolean",
+          "description": "Whether to include member counts for each role.",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+Here is the search_web schema:
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SearchWeb",
+  "type": "object",
+  "required": ["tool", "arguments"],
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["search_web"],
+      "description": "The name of the tool to invoke."
+    },
+    "arguments": {
+      "type": "object",
+      "required": ["query"],
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The search query to run using the Google Programmable Search API."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+"""),
     LLAMA_TEXT_INSTRUCTIONS_TWITCH(""),
     OLLAMA_TEXT_INSTRUCTIONS_CLI(""),
     OLLAMA_TEXT_INSTRUCTIONS_DISCORD(""),

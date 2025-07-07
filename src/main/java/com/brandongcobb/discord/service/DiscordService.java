@@ -97,14 +97,13 @@ public class DiscordService {
         ToolResponseMessage toolMsg = new ToolResponseMessage(List.of(response));
         ToolResponseMessage.ToolResponse otherResponse = new ToolResponseMessage.ToolResponse(uuid, "tool", content.length() <= 500 ? content : content.substring(0, 500));
         ToolResponseMessage otherToolMsg = new ToolResponseMessage(List.of(response));
-        chatMemory.add("assistant", toolMsg);
         chatMemory.add(String.valueOf(senderId), otherToolMsg);
     }
     /*
      *  Helper
      */
-    public String buildContext() {
-        List<org.springframework.ai.chat.messages.Message> messages = chatMemory.get("assistant");
+    public String buildContext(long senderId) {
+        List<org.springframework.ai.chat.messages.Message> messages = chatMemory.get(String.valueOf(senderId));
         if (messages.isEmpty()) {
             return "No conversation context available.";
         }
@@ -305,7 +304,7 @@ public class DiscordService {
     
     private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId) {
         LOGGER.fine("Starting R-step, firstRun=" + firstRun);
-        String prompt = firstRun ? originalDirective : buildContext();
+        String prompt = firstRun ? originalDirective : buildContext(senderId);
         String model = System.getenv("DISCORD_MODEL");
         String provider = System.getenv("DISCORD_PROVIDER");
         String requestType = System.getenv("DISCORD_REQUEST_TYPE");
@@ -356,7 +355,6 @@ public class DiscordService {
                                     }
                                 }
                                 if (lastResults.isEmpty()) {
-                                    chatMemory.add("assistant", new AssistantMessage(content));
                                     chatMemory.add(String.valueOf(senderId), new AssistantMessage(content));
                                 }
                             }
@@ -406,7 +404,6 @@ public class DiscordService {
             return CompletableFuture.completedFuture(null);
         }
         originalDirective = userInput;
-        chatMemory.add("assistant", new AssistantMessage(userInput));
         chatMemory.add(String.valueOf(senderId), new AssistantMessage(userInput));
         userInput = null;
         return completeRStepWithTimeout(firstRun, channel, senderId)

@@ -42,7 +42,9 @@ public class ToolService {
     private GetGuildInfo getGuildInfo;
     private ListChannels listChannels;
     private ListRoles listRoles;
+    private ModerateMember moderateMember;
     private ModifyChannel modifyChannel;
+    private ModifyGuild modifyGuild;
     private SearchWeb searchWeb;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
@@ -55,14 +57,18 @@ public class ToolService {
                        GetGuildInfo getGuildInfo,
                        ListChannels listChannels,
                        ListRoles listRoles,
+                       ModerateMember moderateMember,
                        ModifyChannel modifyChannel,
+                       ModifyGuild modifyGuild,
                        SearchWeb searchWeb) {
         this.chatMemory = chatMemory;
         this.createChannel = createChannel;
         this.getGuildInfo = getGuildInfo;
         this.listChannels = listChannels;
         this.listRoles = listRoles;
+        this.moderateMember  = moderateMember;
         this.modifyChannel = modifyChannel;
+        this.modifyGuild = modifyGuild;
         this.searchWeb = searchWeb;
     }
     
@@ -124,10 +130,20 @@ public class ToolService {
     public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input) {
         return listRoles.run(input);
     }
-    
+
+    @Tool(name = "moderate_member", description = "Moderates a member in a guild")
+    public CompletableFuture<ToolStatus> moderateMember(ModerateMemberInput input) {
+        return moderateMember.run(input);
+    }
+
     @Tool(name = "modify_channel", description = "Modifies a channel in a guild")
     public CompletableFuture<ToolStatus> modifyChannel(ModifyChannelInput input) {
         return modifyChannel.run(input);
+    }
+
+    @Tool(name = "modify_guild", description = "Modifies a guild")
+    public CompletableFuture<ToolStatus> modifyGuild(ModifyGuildInput input) {
+        return modifyGuild.run(input);
     }
     
     @Tool(name = "search_web", description = "Search the web for matching criteria")
