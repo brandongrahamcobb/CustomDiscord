@@ -67,35 +67,35 @@ public class ListChannels implements CustomTool<ListChannelsInput, ToolStatus> {
         try {
             return mapper.readTree("""
             {
-              "type": "object",
-              "required": ["guildId"],
-              "properties": {
-                "guildId": {
-                  "type": "string",
-                  "description": "The ID of the Discord server (guild) to list channels for."
+                "type": "object",
+                "properties": {
+                    "guildId": {
+                        "type": "string",
+                        "description": "The ID of the Discord server (guild) to list channels for."
+                    },
+                    "channelTypes": {
+                        "type": "array",
+                        "description": "Optional list of channel types to include. If omitted, all channel types are returned.",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "TEXT",
+                                "VOICE",
+                                "CATEGORY",
+                                "ANNOUNCEMENT",
+                                "STAGE",
+                                "FORUM",
+                                "NEWS"
+                            ]
+                        }
+                    }
                 },
-                "channelTypes": {
-                  "type": "array",
-                  "description": "Optional list of channel types to include. If omitted, all channel types are returned.",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "TEXT",
-                      "VOICE",
-                      "CATEGORY",
-                      "ANNOUNCEMENT",
-                      "STAGE",
-                      "FORUM",
-                      "NEWS"
-                    ]
-                  }
-                }
-              },
-              "additionalProperties": false
+                "required": ["guildId"],
+                "additionalProperties": false
             }
             """);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to build count_file_lines schema", e);
+            throw new RuntimeException("Failed to build list_channels schema", e);
         }
     }
 

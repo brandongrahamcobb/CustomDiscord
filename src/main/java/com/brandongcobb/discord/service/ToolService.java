@@ -19,7 +19,6 @@
 package com.brandongcobb.discord.service;
 
 import com.brandongcobb.discord.Application;
-import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.input.*;
 import com.brandongcobb.discord.tools.*;
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -40,13 +38,11 @@ import java.util.logging.Logger;
 @Service
 public class ToolService {
 
-    @Autowired
+    private CreateChannel createChannel;
     private GetGuildInfo getGuildInfo;
-    @Autowired
     private ListChannels listChannels;
-    @Autowired
     private ListRoles listRoles;
-    @Autowired
+    private ModifyChannel modifyChannel;
     private SearchWeb searchWeb;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
@@ -54,8 +50,20 @@ public class ToolService {
     private final Map<String, CustomTool<?, ?>> tools = new HashMap<>();
 
     @Autowired
-    public ToolService(ChatMemory chatMemory) {
+    public ToolService(ChatMemory chatMemory,
+                       CreateChannel createChannel,
+                       GetGuildInfo getGuildInfo,
+                       ListChannels listChannels,
+                       ListRoles listRoles,
+                       ModifyChannel modifyChannel,
+                       SearchWeb searchWeb) {
         this.chatMemory = chatMemory;
+        this.createChannel = createChannel;
+        this.getGuildInfo = getGuildInfo;
+        this.listChannels = listChannels;
+        this.listRoles = listRoles;
+        this.modifyChannel = modifyChannel;
+        this.searchWeb = searchWeb;
     }
     
     public CompletableFuture<JsonNode> callTool(String name, JsonNode arguments) {
@@ -97,6 +105,11 @@ public class ToolService {
     /*
      *  Tools
      */
+    @Tool(name = "create_channel", description = "Create a channel in a guild")
+    public CompletableFuture<ToolStatus> createChannel(CreateChannelInput input) {
+        return createChannel.run(input);
+    }
+    
     @Tool(name = "get_guild_info", description = "Get information about a guild")
     public CompletableFuture<ToolStatus> getGuildInfo(GetGuildInfoInput input) {
         return getGuildInfo.run(input);
@@ -111,7 +124,12 @@ public class ToolService {
     public CompletableFuture<ToolStatus> getListRoles(ListRolesInput input) {
         return listRoles.run(input);
     }
-
+    
+    @Tool(name = "modify_channel", description = "Modifies a channel in a guild")
+    public CompletableFuture<ToolStatus> modifyChannel(ModifyChannelInput input) {
+        return modifyChannel.run(input);
+    }
+    
     @Tool(name = "search_web", description = "Search the web for matching criteria")
     public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input) {
         return searchWeb.run(input);

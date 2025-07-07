@@ -73,13 +73,13 @@ public class SearchWeb implements CustomTool<SearchWebInput, ToolStatus> {
             return mapper.readTree("""
                 {
                     "type": "object",
-                    "required": ["query"],
                     "properties": {
                         "query": {
-                        "type": "string",
-                        "description": "The search query to run using the Google Programmable Search API."
+                            "type": "string",
+                            "description": "The search query to run using the Google Programmable Search API."
                         }
                     },
+                    "required": ["query"],
                     "additionalProperties": false
                 }
             """);

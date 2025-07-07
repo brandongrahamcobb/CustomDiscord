@@ -67,20 +67,20 @@ public class ListRoles implements CustomTool<ListRolesInput, ToolStatus> {
         try {
             return mapper.readTree("""
             {
-              "type": "object",
-              "required": ["guildId"],
-              "properties": {
-                "guildId": {
-                  "type": "string",
-                  "description": "The Discord server (guild) ID to fetch roles from."
+                "type": "object",
+                "properties": {
+                    "guildId": {
+                        "type": "string",
+                        "description": "The Discord server (guild) ID to fetch roles from."
+                    },
+                    "includeMemberCounts": {
+                        "type": "boolean",
+                        "description": "Whether to include member counts for each role.",
+                        "default": false
+                    }
                 },
-                "includeMemberCounts": {
-                  "type": "boolean",
-                  "description": "Whether to include member counts for each role.",
-                  "default": false
-                }
-              },
-              "additionalProperties": false
+                "required": ["guildId"],
+                "additionalProperties": false
             }
             """);
         } catch (Exception e) {

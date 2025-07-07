@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-
 public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
     
     @Autowired
@@ -65,48 +64,48 @@ public class GetGuildInfo implements CustomTool<GetGuildInfoInput, ToolStatus> {
         try {
             return mapper.readTree("""
             {
-              "type": "object",
-                "required": ["guildId"],
+                "type": "object",
                 "properties": {
-                  "guildId": {
-                  "type": "string",
-                  "description": "The ID of the Discord server (guild) to retrieve metadata for."
+                    "guildId": {
+                        "type": "string",
+                        "description": "The ID of the Discord server (guild) to retrieve metadata for."
+                    },
+                    "includeAll": {
+                        "type": "boolean",
+                        "description": "If true, returns all available server metadata fields."
+                    },
+                    "fields": {
+                        "type": "array",
+                        "description": "A list of specific server metadata fields to return instead of all.",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "name",
+                                "id",
+                                "ownerId",
+                                "boostTier",
+                                "boostCount",
+                                "features",
+                                "preferredLocale",
+                                "createdAt",
+                                "systemChannelId",
+                                "afkChannelId",
+                                "afkTimeoutSeconds",
+                                "rulesChannelId",
+                                "publicUpdatesChannelId",
+                                "description",
+                                "vanityUrl",
+                                "iconUrl"
+                            ]
+                        }
+                    }
                 },
-                "includeAll": {
-                  "type": "boolean",
-                  "description": "If true, returns all available server metadata fields."
-                },
-                "fields": {
-                  "type": "array",
-                  "description": "A list of specific server metadata fields to return instead of all.",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "name",
-                      "id",
-                      "ownerId",
-                      "boostTier",
-                      "boostCount",
-                      "features",
-                      "preferredLocale",
-                      "createdAt",
-                      "systemChannelId",
-                      "afkChannelId",
-                      "afkTimeoutSeconds",
-                      "rulesChannelId",
-                      "publicUpdatesChannelId",
-                      "description",
-                      "vanityUrl",
-                      "iconUrl"
-                    ]
-                  }
-                }
-              },
-              "additionalProperties": false
+                "required": ["guildId"],
+                "additionalProperties": false
             }
             """);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to build count_file_lines schema", e);
+            throw new RuntimeException("Failed to build get_guild_info schema", e);
         }
     }
 

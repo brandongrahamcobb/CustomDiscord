@@ -22,14 +22,13 @@ package com.brandongcobb.discord.tools;
 import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.ToolStatusWrapper;
-import com.brandongcobb.discord.domain.input.CreateChannelInput;
-import com.brandongcobb.discord.domain.input.GetGuildInfoInput;
+import com.brandongcobb.discord.domain.input.ModifyChannelInput;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.requests.restaction.ChannelAction;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -38,7 +37,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class CreateChannel implements CustomTool<CreateChannelInput, ToolStatus> {
+public class ModifyChannel implements CustomTool<ModifyChannelInput, ToolStatus> {
     
     @Autowired
     private ApplicationContext ctx;
@@ -49,7 +48,7 @@ public class CreateChannel implements CustomTool<CreateChannelInput, ToolStatus>
     private final ChatMemory chatMemory;
 
     @Autowired
-    public CreateChannel(ChatMemory chatMemory) {
+    public ModifyChannel(ChatMemory chatMemory) {
         this.chatMemory = chatMemory;
     }
 
@@ -58,7 +57,7 @@ public class CreateChannel implements CustomTool<CreateChannelInput, ToolStatus>
      */
     @Override
     public String getDescription() {
-        return "Creates a channel in a target guild.";
+        return "Modifies a channel in a target guild.";
     }
 
     @Override
@@ -70,107 +69,109 @@ public class CreateChannel implements CustomTool<CreateChannelInput, ToolStatus>
                 "properties": {
                     "guildId": {
                         "type": "string",
-                        "description": "The ID of the Discord guild (server) to create the channel in."
+                        "description": "The unique ID of the Discord guild (server)."
+                    },
+                    "channelId": {
+                        "type": "string",
+                        "description": "The unique ID of the Discord channel to modify."
                     },
                     "name": {
                         "type": "string",
-                        "description": "The name of the new channel. Must be unique within the guild."
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": ["TEXT", "VOICE", "CATEGORY"],
-                        "description": "The type of channel to create: TEXT, VOICE, or CATEGORY."
+                        "description": "New name for the channel."
                     },
                     "topic": {
                         "type": "string",
-                        "description": "The topic of the text channel. Only applicable for TEXT channels."
+                        "description": "New topic for the channel (only applicable to text channels)."
                     },
                     "parentId": {
                         "type": "string",
-                        "description": "The ID of the category under which the new channel should be nested."
+                        "description": "ID of the parent category to move the channel under."
                     },
                     "bitrate": {
                         "type": "integer",
                         "minimum": 8000,
                         "maximum": 96000,
-                        "description": "Bitrate in bits per second for voice channels. Only applicable for VOICE channels."
+                        "description": "New bitrate for voice channels (in bits per second)."
                     },
                     "userLimit": {
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 99,
-                        "description": "Maximum number of users allowed in the voice channel. Only applicable for VOICE channels."
+                        "description": "Maximum number of users for the voice channel."
+                    },
+                    "position": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "New position of the channel in the channel list."
                     }
                 },
-                "required": ["guildId", "name", "type"],
+                "required": ["guildId", "channelId"],
                 "additionalProperties": false
             }
             """);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to build create_channel schema", e);
+            throw new RuntimeException("Failed to build modify_channel schema", e);
         }
     }
 
     @Override
-    public Class<CreateChannelInput> getInputClass() {
-        return CreateChannelInput.class;
+    public Class<ModifyChannelInput> getInputClass() {
+        return ModifyChannelInput.class;
     }
     
     @Override
     public String getName() {
-        return "create_channel";
+        return "modify_channel";
     }
     
     /*
      * Tool
      */
     @Override
-    public CompletableFuture<ToolStatus> run(CreateChannelInput input) {
+    public CompletableFuture<ToolStatus> run(ModifyChannelInput input) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 DiscordBot bot = ctx.getBean(DiscordBot.class);
                 JDA api = bot.completeGetJDA().join();
-                Guild guild = api.getGuildById(input.getGuildId());
+                var guild = api.getGuildById(input.getGuildId());
                 if (guild == null) {
                     return new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, toolCall);
                 }
 
-                ChannelType channelType = ChannelType.valueOf(input.getType().toLowerCase());
-
-                ChannelAction<?> action = switch (channelType) {
-                    case TEXT -> guild.createTextChannel(input.getName());
-                    case VOICE -> guild.createVoiceChannel(input.getName());
-                    case CATEGORY -> guild.createCategory(input.getName());
-                    default -> null;
-                };
-
-                if (action == null) {
-                    return new ToolStatusWrapper("Unsupported or null channel type: " + input.getType(), false, toolCall);
+                GuildChannel channel = guild.getGuildChannelById(input.getChannelId());
+                if (channel == null) {
+                    return new ToolStatusWrapper("Channel not found: " + input.getChannelId(), false, toolCall);
                 }
-
+                if (input.getName() != null) {
+                    channel.getManager().setName(input.getName()).queue();
+                }
+                if (input.getPosition() != null) {
+                    guild.modifyTextChannelPositions()
+                             .selectPosition(channel)
+                             .moveTo(input.getPosition())
+                             .queue();
+                }
                 if (input.getParentId() != null) {
-                    action.setParent(guild.getCategoryById(input.getParentId()));
+                    var parent = guild.getCategoryById(input.getParentId());
+                    if (channel instanceof TextChannel textChannel && parent != null) {
+                        textChannel.getManager().setParent(parent).queue();
+                    }
                 }
-
-                if (input.getTopic() != null && channelType == ChannelType.TEXT) {
-                    action = ((ChannelAction<?>) action).setTopic(input.getTopic());
+                if (channel instanceof TextChannel textChannel && input.getTopic() != null) {
+                    textChannel.getManager().setTopic(input.getTopic()).queue();
                 }
-
-                if (channelType == ChannelType.VOICE) {
+                if (channel instanceof VoiceChannel voiceChannel) {
                     if (input.getBitrate() != null) {
-                        action = ((ChannelAction<?>) action).setBitrate(input.getBitrate());
+                        voiceChannel.getManager().setBitrate(input.getBitrate()).queue();
                     }
                     if (input.getUserLimit() != null) {
-                        action = ((ChannelAction<?>) action).setUserlimit(input.getUserLimit());
+                        voiceChannel.getManager().setUserLimit(input.getUserLimit()).queue();
                     }
                 }
-
-                var createdChannel = action.complete();
-
-                return new ToolStatusWrapper("Created channel: " + createdChannel.getName() + " (" + createdChannel.getId() + ")", true, toolCall);
+                return new ToolStatusWrapper("Channel modified successfully", true, toolCall);
             } catch (Exception e) {
-                
+            
                 String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
                 return new ToolStatusWrapper("Unexpected error: " + e.getMessage(), false, toolCall);
             }
