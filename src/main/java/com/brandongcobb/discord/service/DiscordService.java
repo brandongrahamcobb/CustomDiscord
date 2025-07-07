@@ -400,6 +400,7 @@ public class DiscordService {
      * Full-REPL
      */
     public CompletableFuture<Void> startSequence(String userInput, long senderId, GuildChannel channel) {
+        if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
         mess.completeSendDiscordMessage(channel, "Thinking...").join();
         if (userInput == null || userInput.isBlank()) {
             return CompletableFuture.completedFuture(null);
