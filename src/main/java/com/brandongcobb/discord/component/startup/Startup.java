@@ -27,7 +27,6 @@ public class Startup {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onReady(String args[]) {
-        System.out.println("✅ App is ready, context loaded");
         ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
     }
 }

@@ -149,9 +149,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             }
             resolvedTextChannel = (TextChannel) channel;
         } else {
-            return CompletableFuture.completedFuture(
-                new ToolStatusWrapper("Channel ID was null; TextChannel not available", false, null)
-            );
+            resolvedTextChannel = guild.getChannelById(TextChannel.class, Long.valueOf(System.getenv("DEV_DISCORD_CHANNEL")));
         }
 
         if (resolvedTextChannel == null) {
