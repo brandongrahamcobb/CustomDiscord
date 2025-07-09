@@ -217,7 +217,7 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Application", ""));
 
         contentFuture.thenCompose(prompt ->
-            dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
+            dis.startAlternateSequence(prompt, senderId, message.getChannel().asTextChannel())
         ).exceptionally(ex -> {
             ex.printStackTrace();
             return null;

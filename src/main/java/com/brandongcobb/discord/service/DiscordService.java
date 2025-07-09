@@ -259,7 +259,7 @@ public class DiscordService {
     /*
      *  R-Step
      */
-    private CompletableFuture<MetadataContainer> completeRStepWithTimeout(boolean firstRun, GuildChannel channel, Long senderId) {
+    private CompletableFuture<MetadataContainer> completeRStepWithTimeout(boolean firstRun, GuildChannel channel, Long senderId, String version) {
         final int maxRetries = 2;
         final long timeout = 3600_000;
         CompletableFuture<MetadataContainer> result = new CompletableFuture<>();
@@ -268,7 +268,7 @@ public class DiscordService {
             @Override
             public void run() {
                 retries++;
-                completeRStep(firstRun, channel, senderId)
+                completeRStep(firstRun, channel, senderId, version)
                     .orTimeout(timeout, TimeUnit.SECONDS)
                     .whenComplete((resp, err) -> {
                         if (err != null || resp == null) {
@@ -303,10 +303,20 @@ public class DiscordService {
         return result;
     }
     
-    private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId) {
+    private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId, String version) {
         LOGGER.fine("Starting R-step, firstRun=" + firstRun);
         String prompt = firstRun ? originalDirective : buildContext(senderId);
-        String model = System.getenv("DISCORD_MODEL");
+        String modelEnv;
+        switch (version) {
+            case "fallacy":
+                modelEnv = System.getenv("DISCORD_FALLACY_MODEL");
+                break;
+            default:
+                modelEnv = System.getenv("DISCORD_MODEL");
+                break;
+        }
+        final String model = modelEnv; // ✅ model is now effectively final
+
         String provider = System.getenv("DISCORD_PROVIDER");
         String requestType = System.getenv("DISCORD_REQUEST_TYPE");
         CompletableFuture<String> endpointFuture = modelRegistry.completeGetAIEndpoint(false, provider, "discord", requestType);
@@ -403,6 +413,7 @@ public class DiscordService {
      */
     public CompletableFuture<Void> startSequence(String userInput, long senderId, GuildChannel channel) {
         if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
+        String version = null;
         mess.completeSendDiscordMessage(channel, "Thinking...").join();
         if (userInput == null || userInput.isBlank()) {
             return CompletableFuture.completedFuture(null);
@@ -410,7 +421,7 @@ public class DiscordService {
         originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
         chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
         userInput = null;
-        return completeRStepWithTimeout(firstRun, channel, senderId)
+        return completeRStepWithTimeout(firstRun, channel, senderId, version)
             .thenCompose(resp ->
                 completeEStep(resp, firstRun, channel, senderId)
                     .thenCompose(eDone ->
@@ -419,4 +430,21 @@ public class DiscordService {
             );
     }
 
+    public CompletableFuture<Void> startAlternateSequence(String userInput, long senderId, GuildChannel channel) {
+        if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
+        mess.completeSendDiscordMessage(channel, "Thinking...").join();
+        if (userInput == null || userInput.isBlank()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
+        chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
+        userInput = null;
+        return completeRStepWithTimeout(firstRun, channel, senderId, "fallacy")
+            .thenCompose(resp ->
+                completeEStep(resp, firstRun, channel, senderId)
+                    .thenCompose(eDone ->
+                        completePStep(channel, senderId)
+                    )
+            );
+    }
 }
