@@ -217,7 +217,7 @@ public class MessageService {
             if (matcher.start() > lastEnd) {
                 String beforeCode = response.substring(lastEnd, matcher.start()).trim();
                 if (!beforeCode.isEmpty()) {
-                    futures.addAll(sendInChunks(message, beforeCode));
+                    futures.addAll(completeSendInChunks(message, beforeCode));
                 }
             }
             String fileType = matcher.group(1) != null ? matcher.group(1) : "txt";
@@ -240,7 +240,7 @@ public class MessageService {
         if (lastEnd < response.length()) {
             String remaining = response.substring(lastEnd).trim();
             if (!remaining.isEmpty()) {
-                futures.addAll(sendInChunks(message, remaining));
+                futures.addAll(completeSendInChunks(message, remaining));
             }
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -256,7 +256,7 @@ public class MessageService {
             if (matcher.start() > lastEnd) {
                 String beforeCode = response.substring(lastEnd, matcher.start()).trim();
                 if (!beforeCode.isEmpty()) {
-                    futures.addAll(sendInChunks(channel, beforeCode));
+                    futures.addAll(completeSendInChunks(channel, beforeCode));
                 }
             }
             String fileType = matcher.group(1) != null ? matcher.group(1) : "txt";
@@ -279,7 +279,7 @@ public class MessageService {
         if (lastEnd < response.length()) {
             String remaining = response.substring(lastEnd).trim();
             if (!remaining.isEmpty()) {
-                futures.addAll(sendInChunks(channel, remaining));
+                futures.addAll(completeSendInChunks(channel, remaining));
             }
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -398,7 +398,7 @@ public class MessageService {
         return count % 2 != 0;
     }
     
-    private List<CompletableFuture<Message>> sendInChunks(GuildChannel channel, String text) {
+    public List<CompletableFuture<Message>> completeSendInChunks(GuildChannel channel, String text) {
         List<CompletableFuture<Message>> chunks = new ArrayList<>();
         int maxLength = 2000;
         int index = 0;
@@ -419,7 +419,8 @@ public class MessageService {
         return chunks;
     }
     
-    private List<CompletableFuture<Message>> sendInChunks(Message message, String text) {
+    
+    private List<CompletableFuture<Message>> completeSendInChunks(Message message, String text) {
         List<CompletableFuture<Message>> chunks = new ArrayList<>();
         int maxLength = 2000;
         int index = 0;

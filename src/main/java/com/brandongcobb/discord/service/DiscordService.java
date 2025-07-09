@@ -392,7 +392,7 @@ public class DiscordService {
 //            }
 //        }
         if (content != null) {
-            mess.completeSendDiscordMessage(channel, content).join();
+            mess.completeSendInChunks(channel, content);
         }
     }
     
