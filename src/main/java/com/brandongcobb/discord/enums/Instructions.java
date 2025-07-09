@@ -46,7 +46,6 @@ Here is the create_channel schema for creating a new channel:
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "CreateChannel",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -90,18 +89,51 @@ Here is the create_channel schema for creating a new channel:
                     "description": "Maximum number of users allowed in the voice channel. Only applicable for VOICE channels."
                 }
             },
-            "required": ["guildId", "name", "type"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId", "name", "type"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"],
+}
+Here is the get_channel_info schema for getting the Discord channel information.
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "GetGuildInfo",
+    "type": "object",
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["get_channel_info"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the Discord server (guild) to retrieve channel permissions for."
+                },
+                "channelIds": {
+                    "type": "array",
+                    "description": "A list of channel IDs to include.",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "additionalProperties": false,
+            "required": ["guildId", "channelIds"]
+        }
+    },
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the get_guild_info schema for getting the Discord guild information.
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "GetGuildInfo",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -110,7 +142,6 @@ Here is the get_guild_info schema for getting the Discord guild information.
         },
         "arguments": {
             "type": "object",
-            "required": ["guildId"],
             "properties": {
                 "guildId": {
                     "type": "string",
@@ -146,39 +177,48 @@ Here is the get_guild_info schema for getting the Discord guild information.
                     }
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the get_member_info schema for getting information about a user.
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "GetMemberInfo",
     "type": "object",
-    "required": ["guildId", "userId"],
     "properties": {
-        "guildId": {
+        "tool": {
             "type": "string",
-            "description": "The ID of the guild (server) where the member belongs."
+            "enum": ["get_member_info],
+            "description": "The name of the tool to invoke."
         },
-        "userId": {
-            "type": "string",
-            "description": "The ID of the user/member to fetch information for."
-        },
-        "originalJson": {
+        "arguments": {
             "type": "object",
-            "description": "The original unprocessed JSON input (optional)."
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the guild (server) where the member belongs."
+                },
+                "userId": {
+                    "type": "string",
+                    "description": "The ID of the user/member to fetch information for."
+                }
+            },
+            "additionalProperties": false,
+            "required": ["guildId", "userId"],
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the list_channels schema for listing channels in a Discord guild:
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ListChannels",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -187,7 +227,6 @@ Here is the list_channels schema for listing channels in a Discord guild:
         },
         "arguments": {
             "type": "object",
-            "required": ["guildId"],
             "properties": {
                 "guildId": {
                     "type": "string",
@@ -210,39 +249,18 @@ Here is the list_channels schema for listing channels in a Discord guild:
                     }
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the list_members schema for listing members in a Discord guild:
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "ListMember",
+    "title": "ListMembers",
     "type": "object",
-    "required": ["guildId"],
-    "properties": {
-        "guildId": {
-            "type": "string",
-            "description": "The ID of the Discord guild (server) to retrieve members from."
-        },
-        "includeStatus": {
-            "type": "boolean",
-            "description": "Whether to include each member's online status (e.g., ONLINE, OFFLINE)."
-        },
-        "includeRoles": {
-           "type": "boolean",
-           "description": "Whether to include the list of role names for each member."
-        }
-    },
-    "additionalProperties": false
-}
-Here is the list_roles schema for listing roles in a Discord guild:
-{
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "ListRoles",
-    "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -251,7 +269,40 @@ Here is the list_roles schema for listing roles in a Discord guild:
         },
         "arguments": {
             "type": "object",
+            "properties": {
+                "guildId": {
+                    "type": "string",
+                    "description": "The ID of the Discord guild (server) to retrieve members from."
+                },
+                "includeStatus": {
+                    "type": "boolean",
+                    "description": "Whether to include each member's online status (e.g., ONLINE, OFFLINE)."
+                },
+                "includeRoles": {
+                   "type": "boolean",
+                   "description": "Whether to include the list of role names for each member."
+                }
+            },
+            "additionalProperties": false,
             "required": ["guildId"],
+        }
+    },
+    "additionalProperties": false,
+    "required": ["tool", "arguments"],
+}
+Here is the list_roles schema for listing roles in a Discord guild:
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ListRoles",
+    "type": "object",
+    "properties": {
+        "tool": {
+            "type": "string",
+            "enum": ["list_roles"],
+            "description": "The name of the tool to invoke."
+        },
+        "arguments": {
+            "type": "object",
             "properties": {
                 "guildId": {
                     "type": "string",
@@ -263,17 +314,18 @@ Here is the list_roles schema for listing roles in a Discord guild:
                     "default": false
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the moderate_member schema for taking executive actions on members:
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ModerateMember",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -345,11 +397,12 @@ Here is the moderate_member schema for taking executive actions on members:
                     "description": "A message to send to the user via DM before moderation action"
                 }
             },
-            "required": ["guildId", "userId"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId", "userId"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 
 Here is the modify_channel schema for making changes only for a specific channel:
@@ -357,7 +410,6 @@ Here is the modify_channel schema for making changes only for a specific channel
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ModifyChannel",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -405,18 +457,18 @@ Here is the modify_channel schema for making changes only for a specific channel
                     "description": "New position of the channel in the channel list."
                 }
             },
-            "required": ["guildId", "channelId"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId", "channelId"]
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"],
 }
 Here is the modify_guild schema for making changes to the whole guild:
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "ModifyGuild",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -474,18 +526,18 @@ Here is the modify_guild schema for making changes to the whole guild:
                     "description": "List of guild features"
                 }
             },
-            "required": ["guildId"],
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["guildId"]
          }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"]
 }
 Here is the search_web schema:
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "SearchWeb",
     "type": "object",
-    "required": ["tool", "arguments"],
     "properties": {
         "tool": {
             "type": "string",
@@ -494,17 +546,18 @@ Here is the search_web schema:
         },
         "arguments": {
             "type": "object",
-            "required": ["query"],
             "properties": {
                 "query": {
                     "type": "string",
                     "description": "The search query to run using the Google Programmable Search API."
                 }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "required": ["query"],
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "required": ["tool", "arguments"],
 }
 """),
     OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),

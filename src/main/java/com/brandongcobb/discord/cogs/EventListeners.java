@@ -24,34 +24,46 @@ import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.service.AIService;
 import com.brandongcobb.discord.service.DiscordService;
 import com.brandongcobb.discord.service.MessageService;
-import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 @Component
+public class EventListeners extends ListenerAdapter implements Cog, Runnable {
 
-public class EventListeners extends ListenerAdapter implements Cog {
-    
-    public AIService ais;
+    private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
+
+    private final AIService ais;
+    private final DiscordService dis;
+    private final MessageService mess;
+    private final ModelRegistry registry = new ModelRegistry();
+
     private JDA api;
     private DiscordBot bot;
-    private DiscordService dis;
-    private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
-    private MessageService mess;
-    private ModelRegistry registry = new ModelRegistry();
-    
+
+    // File watch components
+    private ScheduledExecutorService scheduler;
+    private long lastPointer = 0L;
+    private File file;
+    private TextChannel targetChannel;
+
     @Autowired
     public EventListeners(AIService ais, DiscordService dis, MessageService mess) {
         this.ais = ais;
@@ -60,62 +72,104 @@ public class EventListeners extends ListenerAdapter implements Cog {
     }
 
     @Override
-    public void register (JDA api, DiscordBot bot) {
+    public void register(JDA api, DiscordBot bot) {
         this.api = api;
         this.bot = bot.completeGetBot().join();
         api.addEventListener(this);
     }
-    
+
+    @Override
+    public void onReady(ReadyEvent event) {
+        LOGGER.info("Bot is ready");
+
+        String filePath = System.getenv().getOrDefault("LOG_WATCH_FILE", "/Users/spawd/git/CustomDiscord/subtitles/obs_output.txt");
+        file = new File(filePath);
+        if (!file.exists()) {
+            LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
+            return;
+        }
+        String channelId = "1390814952285012133";
+        targetChannel = api.getTextChannelById(channelId);
+
+        if (targetChannel == null) {
+            LOGGER.warning("Target text channel not found for ID: " + channelId);
+            return;
+        }
+
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(this, 0, 15, TimeUnit.SECONDS);
+        LOGGER.info("Started file watcher for: " + file.getAbsolutePath());
+    }
+
+    @Override
+    public void run() {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            raf.seek(lastPointer);
+
+            StringBuilder newLines = new StringBuilder();
+            String line;
+            while ((line = raf.readLine()) != null) {
+                newLines.append(new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)).append("\n");
+            }
+
+            lastPointer = raf.getFilePointer();
+            String content = newLines.toString().trim();
+
+            if (!content.isEmpty()) {
+                dis.startSequence(content, Long.valueOf("154749533429956608"), targetChannel)
+                .exceptionally(ex -> {
+                    LOGGER.warning("Error sending log content to startSequence: " + ex.getMessage());
+                    ex.printStackTrace();
+                    return null;
+                });
+            }
+        } catch (Exception e) {
+            LOGGER.severe("Error reading log file: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+    }
+
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
-        if (message.getAuthor().isBot()) {
-            LOGGER.finer("Skipped: Message author is a bot");
-            return;
-        }
+        if (message.getAuthor().isBot()) return;
 
-        // Ignore messages that start with the command prefix (e.g., "!")
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
-        if (prefix != null && message.getContentRaw().startsWith(prefix)) {
-            LOGGER.finer("Skipped: Message starts with command prefix");
+        if (prefix != null && message.getContentRaw().startsWith(prefix)) return;
+
+        if (message.getReferencedMessage() != null &&
+            !message.getReferencedMessage().getAuthor().getId().equals(event.getJDA().getSelfUser().getId())) {
             return;
         }
 
-        // If it's a reply, ignore it unless it's a reply to this bot
-        if (message.getReferencedMessage() != null) {
-            String repliedToId = message.getReferencedMessage().getAuthor().getId();
-            String selfId = event.getJDA().getSelfUser().getId();
-            if (!repliedToId.equals(selfId)) {
-                LOGGER.finer("Skipped: Reply not to this bot");
-                return;
-            }
-        }
-
-        // If not a reply, check if the message mentions this bot explicitly
-        if (message.getMentions().isMentioned(event.getJDA().getSelfUser())) {
-            LOGGER.finer("Message mentions the bot. Proceeding...");
-        } else if (message.getReferencedMessage() == null) {
-            LOGGER.finer("Skipped: Message neither replies to nor mentions the bot");
+        if (!message.getMentions().isMentioned(event.getJDA().getSelfUser()) &&
+            message.getReferencedMessage() == null) {
             return;
         }
+
         long senderId = event.getAuthor().getIdLong();
         List<Attachment> attachments = message.getAttachments();
-        final boolean[] multimodal = new boolean[] { false };
+        final boolean[] multimodal = new boolean[]{false};
+
         CompletableFuture<String> contentFuture = (attachments != null && !attachments.isEmpty())
             ? mess.completeProcessAttachments(attachments).thenApply(list -> {
                 multimodal[0] = true;
                 return String.join("\n", list) + "\n" + message.getContentDisplay().replace("@Application", "");
             })
             : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Application", ""));
-        contentFuture.thenCompose(prompt ->  {
-            return dis.startSequence(prompt, senderId, message.getChannel().asTextChannel());
-        })
-        .exceptionally(ex -> {
+
+        contentFuture.thenCompose(prompt ->
+            dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
+        ).exceptionally(ex -> {
             ex.printStackTrace();
             return null;
         });
     }
-    
-    
 }
-            

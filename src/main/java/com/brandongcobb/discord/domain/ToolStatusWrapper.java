@@ -29,4 +29,5 @@ public class ToolStatusWrapper extends ToolStatus {
                              @JsonProperty("toolCall") String toolCall) {
         super(message, success, toolCall);
     }
+
 }
