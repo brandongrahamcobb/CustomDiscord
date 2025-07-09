@@ -39,6 +39,7 @@ import java.util.logging.Logger;
 public class ToolService {
 
     private CreateChannel createChannel;
+    private GetChannelInfo getChannelInfo;
     private GetGuildInfo getGuildInfo;
     private GetMemberInfo getMemberInfo;
     private ListChannels listChannels;
@@ -56,6 +57,7 @@ public class ToolService {
     @Autowired
     public ToolService(ChatMemory chatMemory,
                        CreateChannel createChannel,
+                       GetChannelInfo getChannelInfo,
                        GetGuildInfo getGuildInfo,
                        GetMemberInfo getMemberInfo,
                        ListChannels listChannels,
@@ -67,6 +69,7 @@ public class ToolService {
                        SearchWeb searchWeb) {
         this.chatMemory = chatMemory;
         this.createChannel = createChannel;
+        this.getChannelInfo = getChannelInfo;
         this.getGuildInfo = getGuildInfo;
         this.getMemberInfo = getMemberInfo;
         this.listChannels = listChannels;
@@ -120,6 +123,11 @@ public class ToolService {
     @Tool(name = "create_channel", description = "Create a channel in a guild")
     public CompletableFuture<ToolStatus> createChannel(CreateChannelInput input) {
         return createChannel.run(input);
+    }
+    
+    @Tool(name = "get_channel_info", description = "Get information about a channel")
+    public CompletableFuture<ToolStatus> getChannelInfo(GetChannelInfoInput input) {
+        return getChannelInfo.run(input);
     }
     
     @Tool(name = "get_guild_info", description = "Get information about a guild")

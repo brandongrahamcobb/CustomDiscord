@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.brandongcobb</groupId>
-    <artifactId>Vyrtuous</artifactId>
+    <artifactId>Application</artifactId>
     <version>0.1</version>
 
-    <name>Vyrtuous</name>
+    <name>Application</name>
 
     <properties>
         <java.version>23</java.version>
@@ -72,6 +72,10 @@
                 </executions>
             </plugin>
             <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
               <!-- Build an executable JAR -->
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-jar-plugin</artifactId>
@@ -81,7 +85,7 @@
                   <manifest>
                     <addClasspath>true</addClasspath>
                     <classpathPrefix>lib/</classpathPrefix>
-                    <mainClass>com.brandongcobb.vyrtuous.Vyrtuous</mainClass>
+                    <mainClass>com.brandongcobb.discord.Application</mainClass>
                   </manifest>
                 </archive>
               </configuration>

@@ -1,4 +1,4 @@
-/*  GetMemberInfoInput.java
+/*  GetChannelInfoInput.java
  *
  *  Copyright (C) 2025  github.com/brandongrahamcobb
  *
@@ -19,16 +19,18 @@ package com.brandongcobb.discord.domain.input;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import net.dv8tion.jda.api.entities.Guild;
 
-
-public class GetMemberInfoInput implements ToolInput {
+public class GetChannelInfoInput implements ToolInput {
 
     private transient JsonNode originalJson;
+
     private String guildId;
-    private String userId;
+    private Boolean includeAll;
+    private List<String> channelIds;
 
     /*
-     *  Getters
+     * Getters
      */
     @Override
     public JsonNode getOriginalJson() {
@@ -39,12 +41,16 @@ public class GetMemberInfoInput implements ToolInput {
         return guildId;
     }
 
-    public String getUserId() {
-        return userId;
+    public Boolean getIncludeAll() {
+        return includeAll;
+    }
+
+    public List<String> getChannelIds() {
+        return channelIds;
     }
 
     /*
-     *  Setters
+     * Setters
      */
     @Override
     public void setOriginalJson(JsonNode originalJson) {
@@ -55,7 +61,11 @@ public class GetMemberInfoInput implements ToolInput {
         this.guildId = guildId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setIncludeAll(Boolean includeAll) {
+        this.includeAll = includeAll;
+    }
+
+    public void setChannelIds(List<String> channelIds) {
+        this.channelIds = channelIds;
     }
 }

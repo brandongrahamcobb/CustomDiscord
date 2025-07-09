@@ -212,8 +212,9 @@ public class CustomMCPServer {
     }
 
     @Autowired
-    public void initializeTools(ToolService toolService, CreateChannel createChannel, GetGuildInfo getGuildInfo, GetMemberInfo getMemberInfo, ListChannels listChannels, ListMembers listMembers, ListRoles listRoles, ModerateMember moderateMember, ModifyChannel modifyChannel, ModifyGuild modifyGuild, SearchWeb searchWeb) {
+    public void initializeTools(ToolService toolService, CreateChannel createChannel, GetChannelInfo getChannelInfo, GetGuildInfo getGuildInfo, GetMemberInfo getMemberInfo, ListChannels listChannels, ListMembers listMembers, ListRoles listRoles, ModerateMember moderateMember, ModifyChannel modifyChannel, ModifyGuild modifyGuild, SearchWeb searchWeb) {
         toolService.registerTool(createChannel);
+        toolService.registerTool(getChannelInfo);
         toolService.registerTool(getGuildInfo);
         toolService.registerTool(getMemberInfo);
         toolService.registerTool(listChannels);

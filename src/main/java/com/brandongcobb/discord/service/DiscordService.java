@@ -383,15 +383,17 @@ public class DiscordService {
             content = userMsg.getText();
         } else if (lastMessage instanceof AssistantMessage assistantMsg) {
             content = assistantMsg.getText();
-        } else if (lastMessage instanceof SystemMessage systemMsg) {
-            content = systemMsg.getText();
-        } else if (lastMessage instanceof ToolResponseMessage toolResponseMsg) {
-            var responses = toolResponseMsg.getResponses();
-            if (!responses.isEmpty()) {
-                content = responses.get(0).responseData();
-            }
+        }//        } else if (lastMessage instanceof SystemMessage systemMsg) {
+//            content = systemMsg.getText();
+//        } else if (lastMessage instanceof ToolResponseMessage toolResponseMsg) {
+//            var responses = toolResponseMsg.getResponses();
+//            if (!responses.isEmpty()) {
+//                content = responses.get(0).responseData();
+//            }
+//        }
+        if (content != null) {
+            mess.completeSendDiscordMessage(channel, content).join();
         }
-        mess.completeSendDiscordMessage(channel, content).join();
     }
     
     
