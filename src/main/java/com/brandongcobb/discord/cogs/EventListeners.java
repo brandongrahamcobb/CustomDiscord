@@ -116,7 +116,7 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             String content = newLines.toString().trim();
 
             if (!content.isEmpty()) {
-                dis.startSequence(content, Long.valueOf("154749533429956608"), targetChannel)
+                dis.startSequence("Here is plaintext to be parsed for a fallacy:" + content, Long.valueOf("154749533429956608"), targetChannel)
                 .exceptionally(ex -> {
                     LOGGER.warning("Error sending log content to startSequence: " + ex.getMessage());
                     ex.printStackTrace();

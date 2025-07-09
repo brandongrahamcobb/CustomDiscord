@@ -37,7 +37,8 @@ import java.util.logging.Logger;
 
 @Service
 public class ToolService {
-
+    
+    private CorrectFallacy correctFallacy;
     private CreateChannel createChannel;
     private GetChannelInfo getChannelInfo;
     private GetGuildInfo getGuildInfo;
@@ -56,6 +57,7 @@ public class ToolService {
 
     @Autowired
     public ToolService(ChatMemory chatMemory,
+                       CorrectFallacy correctFallacy,
                        CreateChannel createChannel,
                        GetChannelInfo getChannelInfo,
                        GetGuildInfo getGuildInfo,
@@ -68,6 +70,7 @@ public class ToolService {
                        ModifyGuild modifyGuild,
                        SearchWeb searchWeb) {
         this.chatMemory = chatMemory;
+        this.correctFallacy = correctFallacy;
         this.createChannel = createChannel;
         this.getChannelInfo = getChannelInfo;
         this.getGuildInfo = getGuildInfo;
@@ -120,6 +123,11 @@ public class ToolService {
     /*
      *  Tools
      */
+    @Tool(name = "correct_fallacy", description = "Correct a fallacy in a string")
+    public CompletableFuture<ToolStatus> createChannel(CorrectFallacyInput input) {
+        return correctFallacy.run(input);
+    }
+
     @Tool(name = "create_channel", description = "Create a channel in a guild")
     public CompletableFuture<ToolStatus> createChannel(CreateChannelInput input) {
         return createChannel.run(input);
