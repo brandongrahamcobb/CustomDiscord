@@ -60,28 +60,39 @@ Here is the correct_fallacy schema for detecting a fallacy and providing a corre
                     "description": "The ID of the Discord guild (server)."
                 },
                 "channelId": {
-                    "type": "boolean",
-                    "description": "The channel ID where the correction is to be sent."
-                },
-                "correction": {
-                "type": "boolean",
-                "description": "The correction of the fallacy."
-                },
-                "fallacy": {
-                "type": "string",
-                "description": "The string detected which is incorrect."
+                    "type": "string",
+                    "description": "The ID of the channel where the message should be sent."
                 },
                 "messageId": {
-                    "type": "string".
-                    "description": "The snowflake ID for the referenced message."
+                    "type": "string",
+                    "description": "The snowflake ID for the referenced message (to reply to)."
+                },
+                "corrections": {
+                    "type": "array",
+                    "description": "An array of detected fallacies and their suggested corrections.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "fallacy": {
+                                "type": "string",
+                                "description": "The string detected which is incorrect."
+                            },
+                            "correction": {
+                                "type": "string",
+                                "description": "The suggested correction of the fallacy."
+                            }
+                        },
+                        "required": ["fallacy"],
+                        "additionalProperties": false
+                    }
                 }
             },
-            "required": ["guildId"],
+            "required": ["guildId", "corrections"],
             "additionalProperties": false
         }
     },
     "additionalProperties": false,
-    "required": ["tool", "arguments"],
+    "required": ["tool", "arguments"]
 }
 """),
     OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),

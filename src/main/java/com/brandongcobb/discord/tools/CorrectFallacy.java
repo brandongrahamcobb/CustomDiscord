@@ -18,6 +18,7 @@
  */
 package com.brandongcobb.discord.tools;
 
+import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.ToolStatusWrapper;
 import com.brandongcobb.discord.domain.input.CorrectFallacyInput;
@@ -131,11 +132,14 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
     @Override
     public CompletableFuture<ToolStatus> run(CorrectFallacyInput input) {
         CompletableFuture<ToolStatus> future = new CompletableFuture<>();
-
+        
+        String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
+        DiscordBot bot = ctx.getBean(DiscordBot.class);
+        JDA api = bot.completeGetJDA().join();
         Guild guild = api.getGuildById(input.getGuildId());
         if (guild == null) {
             return CompletableFuture.completedFuture(
-                new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, null)
+                new ToolStatusWrapper("Guild not found: " + input.getGuildId(), false, toolCall)
             );
         }
 
@@ -144,7 +148,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             GuildChannel channel = guild.getGuildChannelById(input.getChannelId());
             if (!(channel instanceof TextChannel)) {
                 return CompletableFuture.completedFuture(
-                    new ToolStatusWrapper("Channel not found or not a TextChannel: " + input.getChannelId(), false, null)
+                    new ToolStatusWrapper("Channel not found or not a TextChannel: " + input.getChannelId(), false, toolCall)
                 );
             }
             resolvedTextChannel = (TextChannel) channel;
@@ -154,7 +158,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
 
         if (resolvedTextChannel == null) {
             return CompletableFuture.completedFuture(
-                new ToolStatusWrapper("Channel ID was null or invalid; TextChannel not available", false, null)
+                new ToolStatusWrapper("Channel ID was null or invalid; TextChannel not available", false, toolCall)
             );
         }
 
@@ -162,7 +166,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
         List<FallacyCorrection> corrections = input.getCorrections();
         if (corrections == null || corrections.isEmpty()) {
             return CompletableFuture.completedFuture(
-                new ToolStatusWrapper("No fallacy/correction pairs provided", false, null)
+                new ToolStatusWrapper("No fallacy/correction pairs provided", false, toolCall)
             );
         }
 
@@ -208,9 +212,9 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                                 sent++;
                                 accept(index + 1);
                             },
-                            e -> result.complete(new ToolStatusWrapper("Failed to reply: " + e.getMessage(), false, null))
+                            e -> result.complete(new ToolStatusWrapper("Failed to reply: " + e.getMessage(), false, toolCall))
                         ),
-                        e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, null))
+                        e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, toolCall))
                     );
                 } else {
                     resolvedTextChannel.sendMessageEmbeds(pages.get(index)).queue(
@@ -218,7 +222,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                             sent++;
                             accept(index + 1);
                         },
-                        e -> result.complete(new ToolStatusWrapper("Failed to send embed: " + e.getMessage(), false, null))
+                        e -> result.complete(new ToolStatusWrapper("Failed to send embed: " + e.getMessage(), false, toolCall))
                     );
                 }
             }

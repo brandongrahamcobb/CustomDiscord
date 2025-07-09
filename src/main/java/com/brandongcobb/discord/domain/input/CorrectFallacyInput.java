@@ -17,16 +17,29 @@
  */
 package com.brandongcobb.discord.domain.input;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.util.List;
 
-public class CorrectFallacyInput {
+public class CorrectFallacyInput implements ToolInput {
 
+    private transient JsonNode originalJson;
     private String guildId;              // The ID of the Discord guild (server)
     private String channelId;            // The channel ID where the correction is to be sent
     private String messageId;            // The snowflake ID for the referenced message (optional)
     private List<FallacyCorrection> corrections; // A list of fallacy-correction pairs
 
     // Getters
+    @Override
+    public JsonNode getOriginalJson() {
+        return originalJson;
+    }
+    
+    @Override
+    public void setOriginalJson(JsonNode originalJson) {
+        this.originalJson = originalJson;
+    }
+    
     public String getGuildId() {
         return guildId;
     }
