@@ -139,12 +139,27 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             );
         }
 
-        GuildChannel channel = guild.getGuildChannelById(input.getChannelId());
-        if (!(channel instanceof TextChannel textChannel)) {
+        final TextChannel resolvedTextChannel;
+        if (input.getChannelId() != null) {
+            GuildChannel channel = guild.getGuildChannelById(input.getChannelId());
+            if (!(channel instanceof TextChannel)) {
+                return CompletableFuture.completedFuture(
+                    new ToolStatusWrapper("Channel not found or not a TextChannel: " + input.getChannelId(), false, null)
+                );
+            }
+            resolvedTextChannel = (TextChannel) channel;
+        } else {
             return CompletableFuture.completedFuture(
-                new ToolStatusWrapper("Channel not found or not a TextChannel: " + input.getChannelId(), false, null)
+                new ToolStatusWrapper("Channel ID was null; TextChannel not available", false, null)
             );
         }
+
+        if (resolvedTextChannel == null) {
+            return CompletableFuture.completedFuture(
+                new ToolStatusWrapper("Channel ID was null or invalid; TextChannel not available", false, null)
+            );
+        }
+
 
         List<FallacyCorrection> corrections = input.getCorrections();
         if (corrections == null || corrections.isEmpty()) {
@@ -189,7 +204,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
 
                 CompletableFuture<Message> send;
                 if (input.getMessageId() != null && !input.getMessageId().isBlank() && index == 0) {
-                    textChannel.retrieveMessageById(input.getMessageId()).queue(
+                    resolvedTextChannel.retrieveMessageById(input.getMessageId()).queue(
                         msg -> msg.replyEmbeds(pages.get(index)).queue(
                             m -> {
                                 sent++;
@@ -200,7 +215,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                         e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, null))
                     );
                 } else {
-                    textChannel.sendMessageEmbeds(pages.get(index)).queue(
+                    resolvedTextChannel.sendMessageEmbeds(pages.get(index)).queue(
                         m -> {
                             sent++;
                             accept(index + 1);
