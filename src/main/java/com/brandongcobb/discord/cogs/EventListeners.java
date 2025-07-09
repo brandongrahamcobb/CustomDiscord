@@ -88,16 +88,9 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
             return;
         }
-        String channelId = "1390814952285012133";
-        targetChannel = api.getTextChannelById(channelId);
-
-        if (targetChannel == null) {
-            LOGGER.warning("Target text channel not found for ID: " + channelId);
-            return;
-        }
 
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this, 0, 15, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this, 0, 60, TimeUnit.SECONDS);
         LOGGER.info("Started file watcher for: " + file.getAbsolutePath());
     }
 
