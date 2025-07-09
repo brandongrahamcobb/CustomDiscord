@@ -1,59 +1,84 @@
-//
-//  FallacyCorrectionInput.swift
-//  
-//
-//  Created by Brandon Cobb on 7/9/25.
-//
-
-
+/*  CorrectFallacyInput.java
+ *
+ *  Copyright (C) 2025  github.com/brandongrahamcobb
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.brandongcobb.discord.domain.input;
+
+import java.util.List;
 
 public class CorrectFallacyInput {
 
-    private String guildId;  // The ID of the Discord guild (server)
-    private String channelId;  // The channel ID where the correction is to be sent
-    private String correction;  // The correction of the fallacy
-    private String fallacy;  // The string detected which is incorrect
-    private String messageId;  // The snowflake ID for the referenced message (optional)
+    private String guildId;              // The ID of the Discord guild (server)
+    private String channelId;            // The channel ID where the correction is to be sent
+    private String messageId;            // The snowflake ID for the referenced message (optional)
+    private List<FallacyCorrection> corrections; // A list of fallacy-correction pairs
 
-    // Getters and setters
+    // Getters
     public String getGuildId() {
         return guildId;
-    }
-
-    public void setGuildId(String guildId) {
-        this.guildId = guildId;
     }
 
     public String getChannelId() {
         return channelId;
     }
 
-    public void setChannelId(String channelId) {
-        this.channelId = channelId;
-    }
-
-    public String getCorrection() {
-        return correction;
-    }
-
-    public void setCorrection(String correction) {
-        this.correction = correction;
-    }
-
-    public String getFallacy() {
-        return fallacy;
-    }
-
-    public void setFallacy(String fallacy) {
-        this.fallacy = fallacy;
-    }
-
     public String getMessageId() {
         return messageId;
     }
 
+    public List<FallacyCorrection> getCorrections() {
+        return corrections;
+    }
+
+    // Setters
+    public void setGuildId(String guildId) {
+        this.guildId = guildId;
+    }
+
+    public void setChannelId(String channelId) {
+        this.channelId = channelId;
+    }
+
     public void setMessageId(String messageId) {
         this.messageId = messageId;
+    }
+
+    public void setCorrections(List<FallacyCorrection> corrections) {
+        this.corrections = corrections;
+    }
+
+    // Inner class representing each fallacy-correction pair
+    public static class FallacyCorrection {
+        private String fallacy;        // The incorrect string
+        private String correction;     // The suggested correction (optional)
+
+        public String getFallacy() {
+            return fallacy;
+        }
+
+        public void setFallacy(String fallacy) {
+            this.fallacy = fallacy;
+        }
+
+        public String getCorrection() {
+            return correction;
+        }
+
+        public void setCorrection(String correction) {
+            this.correction = correction;
+        }
     }
 }

@@ -47,5 +47,5 @@ public abstract class ToolStatus {
     public String getToolCall() {
         return toolCall;
     }
-    
+
 }

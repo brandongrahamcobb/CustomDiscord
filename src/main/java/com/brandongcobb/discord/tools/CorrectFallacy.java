@@ -21,13 +21,15 @@ package com.brandongcobb.discord.tools;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.ToolStatusWrapper;
 import com.brandongcobb.discord.domain.input.CorrectFallacyInput;
-import com.brandongcobb.discord.service.AIService;
+import com.brandongcobb.discord.domain.input.CorrectFallacyInput.*;
 import com.brandongcobb.discord.service.MessageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -35,7 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 @Component
 public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatus> {
@@ -58,7 +64,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
      */
     @Override
     public String getDescription() {
-        return "Sends a message in the relevant channel if a fallacy is detected.";
+        return "Sends a message in the relevant channel if a fallacy is detected along with a correction.";
     }
 
     @Override
@@ -73,23 +79,34 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                         "description": "The ID of the Discord guild (server)."
                     },
                     "channelId": {
-                        "type": "boolean",
-                        "description": "The channel ID where the correction is to be sent."
-                    },
-                    "correction": {
-                       "type": "boolean",
-                       "description": "The correction of the fallacy."
-                    },
-                    "fallacy": {
-                       "type": "string",
-                       "description": "The string detected which is incorrect."
+                        "type": "string",
+                        "description": "The ID of the channel where the message should be sent."
                     },
                     "messageId": {
-                        "type": "string".
-                        "description": "The snowflake ID for the referenced message."
+                        "type": "string",
+                        "description": "The snowflake ID for the referenced message (to reply to)."
+                    },
+                    "corrections": {
+                        "type": "array",
+                        "description": "An array of detected fallacies and their suggested corrections.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "fallacy": {
+                                    "type": "string",
+                                    "description": "The string detected which is incorrect."
+                                },
+                                "correction": {
+                                    "type": "string",
+                                    "description": "The suggested correction of the fallacy."
+                                }
+                            },
+                            "required": ["fallacy"],
+                            "additionalProperties": false
+                        }
                     }
                 },
-                "required": ["guildId", "fallacy"],
+                "required": ["guildId", "corrections"],
                 "additionalProperties": false
             }
             """);
@@ -129,48 +146,89 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             );
         }
 
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("🧠 **Detected Fallacy:**\n").append(input.getFallacy());
-        if (input.getCorrection() != null && !input.getCorrection().isBlank()) {
-            messageBuilder.append("\n✅ **Suggested Correction:**\n").append(input.getCorrection());
-        }
-
-        String content = messageBuilder.toString();
-
-        String jsonCall = """
-            {
-              "guildId": "%s",
-              "fallacy": "%s"%s
-            }
-            """.formatted(
-            input.getGuildId(),
-            input.getFallacy(),
-            input.getCorrection() != null
-                ? ",\n  \"correction\": \"%s\"".formatted(input.getCorrection())
-                : ""
-        );
-
-        if (input.getMessageId() != null && !input.getMessageId().isBlank()) {
-            textChannel.retrieveMessageById(input.getMessageId()).queue(
-                original -> original.reply(content).submit().whenComplete((msg, err) -> {
-                    if (err != null) {
-                        future.complete(new ToolStatusWrapper("Failed to send reply: " + err.getMessage(), false, null));
-                    } else {
-                        future.complete(new ToolStatusWrapper("Replied with fallacy and correction.", true, jsonCall));
-                    }
-                }),
-                fetchError -> future.complete(new ToolStatusWrapper("Could not retrieve original message: " + fetchError.getMessage(), false, null))
+        List<FallacyCorrection> corrections = input.getCorrections();
+        if (corrections == null || corrections.isEmpty()) {
+            return CompletableFuture.completedFuture(
+                new ToolStatusWrapper("No fallacy/correction pairs provided", false, null)
             );
-        } else {
-            mess.completeSendResponse(textChannel, content).whenComplete((msg, err) -> {
-                if (err != null) {
-                    future.complete(new ToolStatusWrapper("Failed to send message: " + err.getMessage(), false, null));
-                } else {
-                    future.complete(new ToolStatusWrapper("Sent fallacy and correction.", true, jsonCall));
-                }
-            });
         }
 
-        return future;
+        List<MessageEmbed> pages = new ArrayList<>();
+        for (int i = 0; i < corrections.size(); i += 10) {
+            EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("🧠 Detected Fallacies (Page " + ((i / 10) + 1) + ")")
+                .setColor(Color.ORANGE);
+
+            for (int j = i; j < i + 10 && j < corrections.size(); j++) {
+                FallacyCorrection fc = corrections.get(j);
+                String title = "Fallacy " + (j + 1);
+                String desc = "**Fallacy:** " + fc.getFallacy();
+                if (fc.getCorrection() != null && !fc.getCorrection().isBlank()) {
+                    desc += "\n**Correction:** " + fc.getCorrection();
+                }
+                embed.addField(title, desc, false);
+            }
+
+            pages.add(embed.build());
+        }
+
+        CompletableFuture<ToolStatus> result = new CompletableFuture<>();
+
+        Consumer<Integer> sendPage = new Consumer<>() {
+            int sent = 0;
+            @Override
+            public void accept(Integer index) {
+                if (index >= pages.size()) {
+                    result.complete(new ToolStatusWrapper(
+                        "Sent " + sent + " fallacy/correction messages.",
+                        true,
+                        generateJson(input)
+                    ));
+                    return;
+                }
+
+                CompletableFuture<Message> send;
+                if (input.getMessageId() != null && !input.getMessageId().isBlank() && index == 0) {
+                    textChannel.retrieveMessageById(input.getMessageId()).queue(
+                        msg -> msg.replyEmbeds(pages.get(index)).queue(
+                            m -> {
+                                sent++;
+                                accept(index + 1);
+                            },
+                            e -> result.complete(new ToolStatusWrapper("Failed to reply: " + e.getMessage(), false, null))
+                        ),
+                        e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, null))
+                    );
+                } else {
+                    textChannel.sendMessageEmbeds(pages.get(index)).queue(
+                        m -> {
+                            sent++;
+                            accept(index + 1);
+                        },
+                        e -> result.complete(new ToolStatusWrapper("Failed to send embed: " + e.getMessage(), false, null))
+                    );
+                }
+            }
+        };
+
+        sendPage.accept(0);
+        return result;
     }
+    
+    private String generateJson(CorrectFallacyInput input) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\n  \"guildId\": \"").append(input.getGuildId()).append("\",\n");
+        json.append("  \"corrections\": [\n");
+        java.util.List<String> entries = input.getCorrections().stream().map(fc -> {
+            String part = "    { \"fallacy\": \"%s\"".formatted(fc.getFallacy());
+            if (fc.getCorrection() != null && !fc.getCorrection().isBlank()) {
+                part += ", \"correction\": \"%s\"".formatted(fc.getCorrection());
+            }
+            return part + " }";
+        }).toList();
+        json.append(String.join(",\n", entries));
+        json.append("\n  ]\n}");
+        return json.toString();
+    }
+
 }
