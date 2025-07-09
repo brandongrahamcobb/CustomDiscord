@@ -20,25 +20,36 @@ package com.brandongcobb.discord.cogs;
 
 import com.brandongcobb.discord.Application;
 import com.brandongcobb.discord.component.bot.DiscordBot;
+import com.brandongcobb.discord.registry.FallacyRegistry;
 import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.service.AIService;
 import com.brandongcobb.discord.service.DiscordService;
 import com.brandongcobb.discord.service.MessageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,7 +60,7 @@ import java.util.logging.Logger;
 public class EventListeners extends ListenerAdapter implements Cog, Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
-
+    private static Map<Long, Pair<String, String>> messageIdToPair = FallacyRegistry.getInstance().getMessageIdToPair();
     private final AIService ais;
     private final DiscordService dis;
     private final MessageService mess;
@@ -77,30 +88,7 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
         this.bot = bot.completeGetBot().join();
         api.addEventListener(this);
     }
-
-    @Override
-    public void onReady(ReadyEvent event) {
-        LOGGER.info("Bot is ready");
-
-        String filePath = System.getenv().getOrDefault("LOG_WATCH_FILE", "/Users/spawd/git/CustomDiscord/subtitles/obs_output.txt");
-        file = new File(filePath);
-        if (!file.exists()) {
-            LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
-            return;
-        }
-        String channelId = "1390814952285012133";
-        targetChannel = api.getTextChannelById(channelId);
-
-        if (targetChannel == null) {
-            LOGGER.warning("Target text channel not found for ID: " + channelId);
-            return;
-        }
-
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this, 0, 60, TimeUnit.SECONDS);
-        LOGGER.info("Started file watcher for: " + file.getAbsolutePath());
-    }
-
+    
     @Override
     public void run() {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
@@ -126,6 +114,69 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
         } catch (Exception e) {
             LOGGER.severe("Error reading log file: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onReady(ReadyEvent event) {
+        LOGGER.info("Bot is ready");
+
+        String filePath = System.getenv().getOrDefault("LOG_WATCH_FILE", "/Users/spawd/git/CustomDiscord/subtitles/obs_output.txt");
+        file = new File(filePath);
+        if (!file.exists()) {
+            LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
+            return;
+        }
+        String channelId = "1390814952285012133";
+        targetChannel = api.getTextChannelById(channelId);
+
+        if (targetChannel == null) {
+            LOGGER.warning("Target text channel not found for ID: " + channelId);
+            return;
+        }
+
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(this, 0, 60, TimeUnit.SECONDS);
+        LOGGER.info("Started file watcher for: " + file.getAbsolutePath());
+    }
+    
+    @Override
+    public void onMessageReactionAdd(MessageReactionAddEvent event) {
+        if (event.getUser().isBot()) return;
+
+        long messageId = event.getMessageIdLong();
+        String emoji = event.getReaction().getEmoji().asUnicode().getFormatted();
+
+        if (!messageIdToPair.containsKey(messageId)) return;
+
+        Pair<String, String> pair = messageIdToPair.get(messageId);
+
+        Path path = Paths.get("fallacy_corrections.json");
+
+        try {
+            List<String> lines = Files.exists(path) ? Files.readAllLines(path) : new ArrayList<>();
+
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonLine = mapper.writeValueAsString(Map.of(
+                "role", "user",
+                "content", pair.getLeft()
+            )) + "\n" + mapper.writeValueAsString(Map.of(
+                "role", "assistant",
+                "content", pair.getRight()
+            ));
+
+            if (emoji.equals("✅")) {
+                lines.add(jsonLine);
+                Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            } else if (emoji.equals("❌")) {
+                boolean removed = lines.removeIf(line -> line.contains(pair.getLeft()) && line.contains(pair.getRight()));
+                if (removed) {
+                    Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // optionally log or handle errors here
         }
     }
 

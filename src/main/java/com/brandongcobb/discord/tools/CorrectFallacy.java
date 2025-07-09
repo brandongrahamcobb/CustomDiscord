@@ -22,7 +22,8 @@ import com.brandongcobb.discord.component.bot.DiscordBot;
 import com.brandongcobb.discord.domain.ToolStatus;
 import com.brandongcobb.discord.domain.ToolStatusWrapper;
 import com.brandongcobb.discord.domain.input.CorrectFallacyInput;
-import com.brandongcobb.discord.domain.input.CorrectFallacyInput.*;
+import com.brandongcobb.discord.domain.input.CorrectFallacyInput.FallacyCorrection;
+import com.brandongcobb.discord.registry.FallacyRegistry;
 import com.brandongcobb.discord.service.MessageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,17 +31,18 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -52,6 +54,9 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
     private MessageService mess;
+    private static Map<Long, Pair<String, String>> messageIdToPair = FallacyRegistry.getInstance().getMessageIdToPair();
+
+
 
     @Autowired
     public CorrectFallacy(ApplicationContext ctx, ChatMemory chatMemory, MessageService mess) {
@@ -132,7 +137,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
     @Override
     public CompletableFuture<ToolStatus> run(CorrectFallacyInput input) {
         CompletableFuture<ToolStatus> future = new CompletableFuture<>();
-        
+
         String toolCall = "{\"tool\":\"" + getName() + "\",\"arguments\":" + input.getOriginalJson().toString() + "}";
         DiscordBot bot = ctx.getBean(DiscordBot.class);
         JDA api = bot.completeGetJDA().join();
@@ -146,14 +151,14 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
         final TextChannel resolvedTextChannel;
         if (input.getChannelId() != null) {
             GuildChannel channel = guild.getGuildChannelById(input.getChannelId());
-            if (!(channel instanceof TextChannel)) {
+            if (!(channel instanceof TextChannel textChannel)) {
                 return CompletableFuture.completedFuture(
                     new ToolStatusWrapper("Channel not found or not a TextChannel: " + input.getChannelId(), false, toolCall)
                 );
             }
             resolvedTextChannel = (TextChannel) channel;
         } else {
-            resolvedTextChannel = guild.getChannelById(TextChannel.class, Long.valueOf(System.getenv("DEV_DISCORD_CHANNEL")));
+            resolvedTextChannel = guild.getChannelById(TextChannel.class, Long.parseLong(System.getenv("DEV_DISCORD_CHANNEL")));
         }
 
         if (resolvedTextChannel == null) {
@@ -162,7 +167,6 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             );
         }
 
-
         List<FallacyCorrection> corrections = input.getCorrections();
         if (corrections == null || corrections.isEmpty()) {
             return CompletableFuture.completedFuture(
@@ -170,32 +174,14 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
             );
         }
 
-        List<MessageEmbed> pages = new ArrayList<>();
-        for (int i = 0; i < corrections.size(); i += 10) {
-            EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🧠 Detected Fallacies (Page " + ((i / 10) + 1) + ")")
-                .setColor(Color.ORANGE);
-
-            for (int j = i; j < i + 10 && j < corrections.size(); j++) {
-                FallacyCorrection fc = corrections.get(j);
-                String title = "Fallacy " + (j + 1);
-                String desc = "**Fallacy:** " + fc.getFallacy();
-                if (fc.getCorrection() != null && !fc.getCorrection().isBlank()) {
-                    desc += "\n**Correction:** " + fc.getCorrection();
-                }
-                embed.addField(title, desc, false);
-            }
-
-            pages.add(embed.build());
-        }
-
         CompletableFuture<ToolStatus> result = new CompletableFuture<>();
 
         Consumer<Integer> sendPage = new Consumer<>() {
             int sent = 0;
+
             @Override
             public void accept(Integer index) {
-                if (index >= pages.size()) {
+                if (index >= corrections.size()) {
                     result.complete(new ToolStatusWrapper(
                         "Sent " + sent + " fallacy/correction messages.",
                         true,
@@ -204,24 +190,35 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                     return;
                 }
 
-                CompletableFuture<Message> send;
+                FallacyCorrection fc = corrections.get(index);
+                EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("🧠 Fallacy " + (index + 1))
+                    .setColor(Color.ORANGE)
+                    .setDescription("**Fallacy:** " + fc.getFallacy() +
+                        (fc.getCorrection() != null && !fc.getCorrection().isBlank()
+                            ? "\n**Correction:** " + fc.getCorrection() : ""));
+
+                Consumer<Message> afterSend = sentMessage -> {
+                    // Register the pair for the listener to use
+                    
+                    messageIdToPair.put(sentMessage.getIdLong(), Pair.of(fc.getFallacy(), fc.getCorrection()));
+                    sentMessage.addReaction(Emoji.fromUnicode("✅")).queue();
+                    sentMessage.addReaction(Emoji.fromUnicode("❌")).queue();
+                    sent++;
+                    accept(index + 1);
+                };
+
                 if (input.getMessageId() != null && !input.getMessageId().isBlank() && index == 0) {
                     resolvedTextChannel.retrieveMessageById(input.getMessageId()).queue(
-                        msg -> msg.replyEmbeds(pages.get(index)).queue(
-                            m -> {
-                                sent++;
-                                accept(index + 1);
-                            },
+                        msg -> msg.replyEmbeds(embed.build()).queue(
+                            afterSend,
                             e -> result.complete(new ToolStatusWrapper("Failed to reply: " + e.getMessage(), false, toolCall))
                         ),
                         e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, toolCall))
                     );
                 } else {
-                    resolvedTextChannel.sendMessageEmbeds(pages.get(index)).queue(
-                        m -> {
-                            sent++;
-                            accept(index + 1);
-                        },
+                    resolvedTextChannel.sendMessageEmbeds(embed.build()).queue(
+                        afterSend,
                         e -> result.complete(new ToolStatusWrapper("Failed to send embed: " + e.getMessage(), false, toolCall))
                     );
                 }
@@ -231,6 +228,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
         sendPage.accept(0);
         return result;
     }
+
     
     private String generateJson(CorrectFallacyInput input) {
         StringBuilder json = new StringBuilder();
