@@ -47,6 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             String content = newLines.toString().trim();
 
             if (!content.isEmpty()) {
-                dis.startSequence("Here is plaintext to be parsed for a fallacy:" + content, Long.valueOf("154749533429956608"), targetChannel)
+                dis.startAlternateSequence("Here is plaintext to be parsed for a fallacy:" + content, Long.valueOf("154749533429956608"), targetChannel)
                 .exceptionally(ex -> {
                     LOGGER.warning("Error sending log content to startSequence: " + ex.getMessage());
                     ex.printStackTrace();
@@ -121,15 +122,25 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     public void onReady(ReadyEvent event) {
         LOGGER.info("Bot is ready");
 
+        // Define allowed time window
+        LocalTime startTime = LocalTime.of(8, 0);  // 08:00 AM
+        LocalTime endTime = LocalTime.of(22, 0);   // 10:00 PM
+        LocalTime now = LocalTime.now();
+
+        if (now.isBefore(startTime) || now.isAfter(endTime)) {
+            LOGGER.info("Current time is outside active window (" + startTime + " to " + endTime + "). File watcher not started.");
+            return;
+        }
+
         String filePath = System.getenv().getOrDefault("LOG_WATCH_FILE", "/Users/spawd/git/CustomDiscord/subtitles/obs_output.txt");
         file = new File(filePath);
         if (!file.exists()) {
             LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
             return;
         }
+
         String channelId = "1390814952285012133";
         targetChannel = api.getTextChannelById(channelId);
-
         if (targetChannel == null) {
             LOGGER.warning("Target text channel not found for ID: " + channelId);
             return;
@@ -217,7 +228,7 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Application", ""));
 
         contentFuture.thenCompose(prompt ->
-            dis.startAlternateSequence(prompt, senderId, message.getChannel().asTextChannel())
+            dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
         ).exceptionally(ex -> {
             ex.printStackTrace();
             return null;

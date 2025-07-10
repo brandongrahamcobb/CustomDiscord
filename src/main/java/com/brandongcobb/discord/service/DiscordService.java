@@ -306,21 +306,11 @@ public class DiscordService {
     private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId, String version) {
         LOGGER.fine("Starting R-step, firstRun=" + firstRun);
         String prompt = firstRun ? originalDirective : buildContext(senderId);
-        String modelEnv;
-        switch (version) {
-            case "fallacy":
-                modelEnv = System.getenv("DISCORD_FALLACY_MODEL");
-                break;
-            default:
-                modelEnv = System.getenv("DISCORD_MODEL");
-                break;
-        }
-        final String model = modelEnv; // ✅ model is now effectively final
-
+        String model = System.getenv("DISCORD_MODEL");
         String provider = System.getenv("DISCORD_PROVIDER");
         String requestType = System.getenv("DISCORD_REQUEST_TYPE");
         CompletableFuture<String> endpointFuture = modelRegistry.completeGetAIEndpoint(false, provider, "discord", requestType);
-        CompletableFuture<String> instructionsFuture = modelRegistry.completeGetInstructions(false, provider, "discord");
+        CompletableFuture<String> instructionsFuture = modelRegistry.completeGetInstructions(false, provider, "discord", version);
         return endpointFuture.thenCombine(instructionsFuture, AbstractMap.SimpleEntry::new).thenCompose(pair -> {
             String endpoint = pair.getKey();
             String instructions = pair.getValue();
