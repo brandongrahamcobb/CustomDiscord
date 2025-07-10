@@ -100,7 +100,7 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                         "items": {
                             "type": "object",
                             "properties": {
-                                "fallacy_name": {
+                                "fallacyName": {
                                     "type": "string",
                                     "description": "The latin name of the fallacy which is incorrect."
                                 },
@@ -210,17 +210,23 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                 String timestampRaw = fc.getTimestamp();
 
                 // 3) Prepare EST timestamp
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
-                String timestampEst;
-                try {
-                    LocalTime lt = LocalTime.parse(timestampRaw, formatter);
-                    ZonedDateTime zdtUtc = ZonedDateTime.of(LocalDate.now(), lt, ZoneOffset.UTC);
-                    ZonedDateTime zdtEst = zdtUtc.withZoneSameInstant(ZoneId.of("America/New_York"));
-                    timestampEst = zdtEst.format(DateTimeFormatter.ofPattern("HH:mm:ss z"));
-                } catch (Exception e) {
-                    timestampEst = "Invalid timestamp";
+                DateTimeFormatter[] formatters = new DateTimeFormatter[]{
+                            DateTimeFormatter.ofPattern("HH:mm:ss,SSS"),
+                            DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+                        };
+                String timestampEst = (timestampRaw != null && !timestampRaw.isBlank())
+                    ? timestampRaw
+                    : "—";
+                for (DateTimeFormatter fmt : formatters) {
+                    try {
+                        LocalTime lt = LocalTime.parse(timestampRaw, fmt);
+                        ZonedDateTime zdtUtc = ZonedDateTime.of(LocalDate.now(), lt, ZoneOffset.UTC);
+                        ZonedDateTime zdtEst = zdtUtc.withZoneSameInstant(ZoneId.of("America/New_York"));
+                        timestampEst = zdtEst.format(DateTimeFormatter.ofPattern("HH:mm:ss z"));
+                    } catch (Exception e) {
+                        timestampEst = "Invalid timestamp";
+                    }
                 }
-
                 // 4) Build the embed
                 EmbedBuilder embed = new EmbedBuilder()
                     .setColor(Color.ORANGE)

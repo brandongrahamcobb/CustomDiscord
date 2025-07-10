@@ -105,7 +105,6 @@ public class CorrectFallacyInput implements ToolInput {
             this.correction = correction;
         }
 
-
         public String getTimestamp() {
             return timestamp;
         }

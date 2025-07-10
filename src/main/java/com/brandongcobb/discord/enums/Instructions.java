@@ -76,7 +76,7 @@ Most things are not fallacious and are likely a misinterpretation of the transcr
                     "items": {
                         "type": "object",
                         "properties": {
-                            "fallacy_name": {
+                            "fallacyName": {
                                 "type": "string",
                                 "description": "The latin name of the fallacy which is incorrect."
                             },
