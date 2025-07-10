@@ -210,23 +210,37 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                 String timestampRaw = fc.getTimestamp();
 
                 // 3) Prepare EST timestamp
-                DateTimeFormatter[] formatters = new DateTimeFormatter[]{
-                            DateTimeFormatter.ofPattern("HH:mm:ss,SSS"),
-                            DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
-                        };
-                String timestampEst = (timestampRaw != null && !timestampRaw.isBlank())
-                    ? timestampRaw
-                    : "—";
-                for (DateTimeFormatter fmt : formatters) {
-                    try {
-                        LocalTime lt = LocalTime.parse(timestampRaw, fmt);
-                        ZonedDateTime zdtUtc = ZonedDateTime.of(LocalDate.now(), lt, ZoneOffset.UTC);
-                        ZonedDateTime zdtEst = zdtUtc.withZoneSameInstant(ZoneId.of("America/New_York"));
-                        timestampEst = zdtEst.format(DateTimeFormatter.ofPattern("HH:mm:ss z"));
-                    } catch (Exception e) {
-                        timestampEst = "Invalid timestamp";
-                    }
-                }
+                // --- STEP 0) isolate the start time from the range
+                String timestampFull  = fc.getTimestamp();  // e.g. "00:00:00,644 --> 00:00:06,632"
+                String timestampRange = (timestampFull != null)
+                    ? timestampFull.split("-->")[0].trim()
+                    : "";
+
+                // --- STEP 1) normalize to dot‐separator
+                String normalized     = timestampRange.replace(',', '.');
+
+                // --- STEP 2) manual split into h:m:s and millis
+                String[] parts        = normalized.split("\\.");
+                String   hms          = (parts.length > 0) ? parts[0] : "00:00:00";
+                int      milli        = (parts.length > 1)
+                                       ? Integer.parseInt(parts[1])
+                                       : 0;
+
+                // --- STEP 3) split h:m:s into components
+                String[] split        = hms.split(":");
+                LocalTime lt          = LocalTime.of(
+                    Integer.parseInt(split[0]),  // hour
+                    Integer.parseInt(split[1]),  // minute
+                    Integer.parseInt(split[2]),  // second
+                    milli * 1_000_000            // nanosecond
+                );
+
+                // --- STEP 4) interpret as UTC, then convert to EST
+                ZoneId        estZone    = ZoneId.of("America/New_York");
+                ZonedDateTime nowEst     = ZonedDateTime.now(estZone);
+                String        timestampEst
+                    = nowEst.format(DateTimeFormatter.ofPattern("h:mm a z"));
+
                 // 4) Build the embed
                 EmbedBuilder embed = new EmbedBuilder()
                     .setColor(Color.ORANGE)
