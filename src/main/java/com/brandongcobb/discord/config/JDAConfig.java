@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Configuration;
 public class JDAConfig {
 
     String apiKey = System.getenv("DISCORD_API_KEY");
-    JDA api = JDABuilder.createDefault(apiKey, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
+    JDA api = JDABuilder.createDefault(apiKey, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
             .setActivity(Activity.playing("I take pharmacology personally."))
             .build();
 

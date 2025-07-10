@@ -198,12 +198,15 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     
     @Override
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
+        LOGGER.finer("test");
         if (event.getUser().isBot()) return;
-
+        
         long messageId = event.getMessageIdLong();
         String emoji = event.getReaction().getEmoji().asUnicode().getFormatted();
 
-        if (!messageIdToPair.containsKey(messageId)) return;
+        if (!messageIdToPair.containsKey(messageId)) {
+            return;
+        }
 
         Pair<String, String> pair = messageIdToPair.get(messageId);
 
