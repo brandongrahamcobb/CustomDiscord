@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 @Service
 public class ToolService {
     
-    private CorrectFallacy correctFallacy;
     private CreateChannel createChannel;
     private GetChannelInfo getChannelInfo;
     private GetGuildInfo getGuildInfo;
@@ -49,7 +48,6 @@ public class ToolService {
     private ModerateMember moderateMember;
     private ModifyChannel modifyChannel;
     private ModifyGuild modifyGuild;
-    private SearchWeb searchWeb;
     private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
     private final ObjectMapper mapper = new ObjectMapper();
     private final ChatMemory chatMemory;
@@ -57,7 +55,6 @@ public class ToolService {
 
     @Autowired
     public ToolService(ChatMemory chatMemory,
-                       CorrectFallacy correctFallacy,
                        CreateChannel createChannel,
                        GetChannelInfo getChannelInfo,
                        GetGuildInfo getGuildInfo,
@@ -67,10 +64,8 @@ public class ToolService {
                        ListRoles listRoles,
                        ModerateMember moderateMember,
                        ModifyChannel modifyChannel,
-                       ModifyGuild modifyGuild,
-                       SearchWeb searchWeb) {
+                       ModifyGuild modifyGuild) {
         this.chatMemory = chatMemory;
-        this.correctFallacy = correctFallacy;
         this.createChannel = createChannel;
         this.getChannelInfo = getChannelInfo;
         this.getGuildInfo = getGuildInfo;
@@ -81,7 +76,6 @@ public class ToolService {
         this.moderateMember  = moderateMember;
         this.modifyChannel = modifyChannel;
         this.modifyGuild = modifyGuild;
-        this.searchWeb = searchWeb;
     }
     
     public CompletableFuture<JsonNode> callTool(String name, JsonNode arguments) {
@@ -123,11 +117,6 @@ public class ToolService {
     /*
      *  Tools
      */
-    @Tool(name = "correct_fallacy", description = "Correct a fallacy in a string")
-    public CompletableFuture<ToolStatus> createChannel(CorrectFallacyInput input) {
-        return correctFallacy.run(input);
-    }
-
     @Tool(name = "create_channel", description = "Create a channel in a guild")
     public CompletableFuture<ToolStatus> createChannel(CreateChannelInput input) {
         return createChannel.run(input);
@@ -178,9 +167,5 @@ public class ToolService {
         return modifyGuild.run(input);
     }
     
-    @Tool(name = "search_web", description = "Search the web for matching criteria")
-    public CompletableFuture<ToolStatus> searchWeb(SearchWebInput input) {
-        return searchWeb.run(input);
-    }
 }
 

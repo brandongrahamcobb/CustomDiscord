@@ -212,8 +212,7 @@ public class CustomMCPServer {
     }
 
     @Autowired
-    public void initializeTools(ToolService toolService, CorrectFallacy correctFallacy, CreateChannel createChannel, GetChannelInfo getChannelInfo, GetGuildInfo getGuildInfo, GetMemberInfo getMemberInfo, ListChannels listChannels, ListMembers listMembers, ListRoles listRoles, ModerateMember moderateMember, ModifyChannel modifyChannel, ModifyGuild modifyGuild, SearchWeb searchWeb) {
-        toolService.registerTool(correctFallacy);
+    public void initializeTools(ToolService toolService, CreateChannel createChannel, GetChannelInfo getChannelInfo, GetGuildInfo getGuildInfo, GetMemberInfo getMemberInfo, ListChannels listChannels, ListMembers listMembers, ListRoles listRoles, ModerateMember moderateMember, ModifyChannel modifyChannel, ModifyGuild modifyGuild) {
         toolService.registerTool(createChannel);
         toolService.registerTool(getChannelInfo);
         toolService.registerTool(getGuildInfo);
@@ -224,7 +223,6 @@ public class CustomMCPServer {
         toolService.registerTool(moderateMember);
         toolService.registerTool(modifyChannel);
         toolService.registerTool(modifyGuild);
-        toolService.registerTool(searchWeb);
     }
 
     public static class ToolWrapper {

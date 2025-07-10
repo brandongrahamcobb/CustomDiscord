@@ -259,7 +259,7 @@ public class DiscordService {
     /*
      *  R-Step
      */
-    private CompletableFuture<MetadataContainer> completeRStepWithTimeout(boolean firstRun, GuildChannel channel, Long senderId, String version) {
+    private CompletableFuture<MetadataContainer> completeRStepWithTimeout(boolean firstRun, GuildChannel channel, Long senderId) {
         final int maxRetries = 2;
         final long timeout = 3600_000;
         CompletableFuture<MetadataContainer> result = new CompletableFuture<>();
@@ -268,7 +268,7 @@ public class DiscordService {
             @Override
             public void run() {
                 retries++;
-                completeRStep(firstRun, channel, senderId, version)
+                completeRStep(firstRun, channel, senderId)
                     .orTimeout(timeout, TimeUnit.SECONDS)
                     .whenComplete((resp, err) -> {
                         if (err != null || resp == null) {
@@ -303,14 +303,14 @@ public class DiscordService {
         return result;
     }
     
-    private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId, String version) {
+    private CompletableFuture<MetadataContainer> completeRStep(boolean firstRun, GuildChannel channel, long senderId) {
         LOGGER.fine("Starting R-step, firstRun=" + firstRun);
         String prompt = firstRun ? originalDirective : buildContext(senderId);
         String model = System.getenv("DISCORD_MODEL");
         String provider = System.getenv("DISCORD_PROVIDER");
         String requestType = System.getenv("DISCORD_REQUEST_TYPE");
         CompletableFuture<String> endpointFuture = modelRegistry.completeGetAIEndpoint(false, provider, "discord", requestType);
-        CompletableFuture<String> instructionsFuture = modelRegistry.completeGetInstructions(false, provider, "discord", version);
+        CompletableFuture<String> instructionsFuture = modelRegistry.completeGetInstructions(false, provider, "discord");
         return endpointFuture.thenCombine(instructionsFuture, AbstractMap.SimpleEntry::new).thenCompose(pair -> {
             String endpoint = pair.getKey();
             String instructions = pair.getValue();
@@ -403,7 +403,6 @@ public class DiscordService {
      */
     public CompletableFuture<Void> startSequence(String userInput, long senderId, GuildChannel channel) {
         if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
-        String version = null;
         mess.completeSendDiscordMessage(channel, "Thinking...").join();
         if (userInput == null || userInput.isBlank()) {
             return CompletableFuture.completedFuture(null);
@@ -411,7 +410,7 @@ public class DiscordService {
         originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
         chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
         userInput = null;
-        return completeRStepWithTimeout(firstRun, channel, senderId, version)
+        return completeRStepWithTimeout(firstRun, channel, senderId)
             .thenCompose(resp ->
                 completeEStep(resp, firstRun, channel, senderId)
                     .thenCompose(eDone ->
@@ -429,7 +428,7 @@ public class DiscordService {
         originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
         chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
         userInput = null;
-        return completeRStepWithTimeout(firstRun, channel, senderId, "fallacy")
+        return completeRStepWithTimeout(firstRun, channel, senderId)
             .thenCompose(resp ->
                 completeEStep(resp, firstRun, channel, senderId)
                     .thenCompose(eDone ->

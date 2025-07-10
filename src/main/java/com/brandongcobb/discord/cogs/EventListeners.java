@@ -99,38 +99,29 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     @Override
     public void run() {
         LOGGER.info("Running file watcher...");
-
         if (file.length() < lastPointer) {
             LOGGER.warning("File was truncated or replaced. Resetting pointer.");
             lastPointer = 0L;
         }
-
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(lastPointer);
-
             StringBuilder buffer = new StringBuilder();
             String line;
             while ((line = raf.readLine()) != null) {
                 line = new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
                 buffer.append(line).append("\n");
             }
-
             lastPointer = raf.getFilePointer();
-            LOGGER.info("Updated lastPointer to: " + lastPointer);
-
+            LOGGER.finer("Updated lastPointer to: " + lastPointer);
             String[] blocks = buffer.toString().split("\r?\n\r?\n");
             List<String> recentBlocks = new ArrayList<>();
-
             for (String block : blocks) {
                 if (!block.isBlank()) {
                     recentBlocks.add(block.trim());
                 }
             }
-
             if (!recentBlocks.isEmpty()) {
-                String combined = "Here is plaintext to be parsed for a fallacy:\n\n"
-                                + String.join("\n\n", recentBlocks);
-
+                String combined = "Here is plaintext to be parsed for a fallacy:\n\n" + String.join("\n\n", recentBlocks);
                 dis.startAlternateSequence(combined, Long.valueOf("154749533429956608"), targetChannel)
                    .exceptionally(ex -> {
                        LOGGER.warning("Error sending recent blocks to tool: " + ex.getMessage());
@@ -162,35 +153,28 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
         }
     }
 
-
     @Override
     public void onReady(ReadyEvent event) {
         LOGGER.info("Bot is ready");
-
-        // Define allowed time window
         LocalTime startTime = LocalTime.of(0, 0);  // 08:00 AM
         LocalTime endTime = LocalTime.of(23, 59);   // 10:00 PM
         LocalTime now = LocalTime.now();
-
         if (now.isBefore(startTime) || now.isAfter(endTime)) {
             LOGGER.info("Current time is outside active window (" + startTime + " to " + endTime + "). File watcher not started.");
             return;
         }
-
         String filePath = System.getenv().getOrDefault("LOG_WATCH_FILE", "/Users/spawd/git/CustomDiscord/subtitles/obs_output.txt");
         file = new File(filePath);
         if (!file.exists()) {
             LOGGER.warning("Log file does not exist: " + file.getAbsolutePath());
             return;
         }
-
         String channelId = "1390814952285012133";
         targetChannel = api.getTextChannelById(channelId);
         if (targetChannel == null) {
             LOGGER.warning("Target text channel not found for ID: " + channelId);
             return;
         }
-
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this, 0, 60, TimeUnit.SECONDS);
         LOGGER.info("Started file watcher for: " + file.getAbsolutePath());
@@ -198,23 +182,16 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     
     @Override
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
-        LOGGER.finer("test");
         if (event.getUser().isBot()) return;
-        
         long messageId = event.getMessageIdLong();
         String emoji = event.getReaction().getEmoji().asUnicode().getFormatted();
-
         if (!messageIdToPair.containsKey(messageId)) {
             return;
         }
-
         Pair<String, String> pair = messageIdToPair.get(messageId);
-
         Path path = Paths.get("fallacy_corrections.json");
-
         try {
             List<String> lines = Files.exists(path) ? Files.readAllLines(path) : new ArrayList<>();
-
             ObjectMapper mapper = new ObjectMapper();
             String jsonLine = mapper.writeValueAsString(Map.of(
                 "role", "user",
@@ -223,7 +200,6 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
                 "role", "assistant",
                 "content", pair.getRight()
             ));
-
             if (emoji.equals("✅")) {
                 lines.add(jsonLine);
                 Files.write(path, lines, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -235,7 +211,6 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            // optionally log or handle errors here
         }
     }
 
@@ -250,31 +225,25 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
         if (message.getAuthor().isBot()) return;
-
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
         if (prefix != null && message.getContentRaw().startsWith(prefix)) return;
-
         if (message.getReferencedMessage() != null &&
             !message.getReferencedMessage().getAuthor().getId().equals(event.getJDA().getSelfUser().getId())) {
             return;
         }
-
         if (!message.getMentions().isMentioned(event.getJDA().getSelfUser()) &&
             message.getReferencedMessage() == null) {
             return;
         }
-
         long senderId = event.getAuthor().getIdLong();
         List<Attachment> attachments = message.getAttachments();
         final boolean[] multimodal = new boolean[]{false};
-
         CompletableFuture<String> contentFuture = (attachments != null && !attachments.isEmpty())
             ? mess.completeProcessAttachments(attachments).thenApply(list -> {
                 multimodal[0] = true;
                 return String.join("\n", list) + "\n" + message.getContentDisplay().replace("@Application", "");
             })
             : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Application", ""));
-
         contentFuture.thenCompose(prompt ->
             dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
         ).exceptionally(ex -> {

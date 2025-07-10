@@ -82,8 +82,7 @@ public class ModelRegistry {
         Map.entry("openrouter", "https://openrouter.ai/api/v1/chat/completions")
     );
     public static final Map<String, String> DISCORD_TEXT_INSTRUCTIONS = Map.ofEntries(
-        Map.entry("discord", Instructions.GOOGLE_TEXT_CREATOR_INSTRUCTIONS_DISCORD.asString()),
-        Map.entry("fallacy", Instructions.GOOGLE_TEXT_FALLACY_INSTRUCTIONS_DISCORD.asString()),
+        Map.entry("google", Instructions.GOOGLE_TEXT_INSTRUCTIONS_DISCORD.asString()),
         Map.entry("openai", Instructions.OPENAI_TEXT_INSTRUCTIONS_DISCORD.asString()),
         Map.entry("openrouter", Instructions.OPENROUTER_TEXT_INSTRUCTIONS_DISCORD.asString())
     );
@@ -287,7 +286,7 @@ public class ModelRegistry {
         return CompletableFuture.completedFuture(endpoint);
     }
     
-    public CompletableFuture<String> completeGetInstructions(boolean multimodal, String provider, String sourceOfRequest, String version) {
+    public CompletableFuture<String> completeGetInstructions(boolean multimodal, String provider, String sourceOfRequest) {
         String instructions = null;
         if ("cli".equals(sourceOfRequest)) {
             instructions = CLI_INSTRUCTIONS.get(provider);
@@ -295,7 +294,7 @@ public class ModelRegistry {
             if (multimodal) {
                 instructions = DISCORD_IMAGE_INSTRUCTIONS.get(provider);
             } else {
-                instructions = DISCORD_TEXT_INSTRUCTIONS.get(version);
+                instructions = DISCORD_TEXT_INSTRUCTIONS.get(provider);
             }
         }
         if (instructions == null) {
