@@ -95,36 +95,46 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(lastPointer);
 
-            StringBuilder newLines = new StringBuilder();
+            StringBuilder buffer = new StringBuilder();
             String line;
             while ((line = raf.readLine()) != null) {
-                newLines.append(new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)).append("\n");
+                line = new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+                buffer.append(line).append("\n");
             }
 
             lastPointer = raf.getFilePointer();
-            String content = newLines.toString().trim();
 
-            if (!content.isEmpty()) {
-                dis.startAlternateSequence("Here is plaintext to be parsed for a fallacy:" + content, Long.valueOf("154749533429956608"), targetChannel)
-                .exceptionally(ex -> {
-                    LOGGER.warning("Error sending log content to startSequence: " + ex.getMessage());
-                    ex.printStackTrace();
-                    return null;
-                });
+            String[] blocks = buffer.toString().split("\r?\n\r?\n"); // individual subtitle blocks
+
+            for (String block : blocks) {
+                if (block.isBlank()) continue;
+
+                // Send the full subtitle block to the tool for fallacy detection
+                String prompt = "Here is plaintext to be parsed for a fallacy:\n" + block.trim();
+
+                dis.startAlternateSequence(prompt, Long.valueOf("154749533429956608"), targetChannel)
+                   .exceptionally(ex -> {
+                       LOGGER.warning("Error sending subtitle block to tool: " + ex.getMessage());
+                       ex.printStackTrace();
+                       return null;
+                   });
             }
+
         } catch (Exception e) {
-            LOGGER.severe("Error reading log file: " + e.getMessage());
+            LOGGER.severe("Error reading SRT file: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+
 
     @Override
     public void onReady(ReadyEvent event) {
         LOGGER.info("Bot is ready");
 
         // Define allowed time window
-        LocalTime startTime = LocalTime.of(8, 0);  // 08:00 AM
-        LocalTime endTime = LocalTime.of(22, 0);   // 10:00 PM
+        LocalTime startTime = LocalTime.of(0, 0);  // 08:00 AM
+        LocalTime endTime = LocalTime.of(23, 59);   // 10:00 PM
         LocalTime now = LocalTime.now();
 
         if (now.isBefore(startTime) || now.isAfter(endTime)) {
