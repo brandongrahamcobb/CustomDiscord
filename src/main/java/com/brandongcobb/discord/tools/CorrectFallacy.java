@@ -41,6 +41,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.awt.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -98,13 +100,21 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                         "items": {
                             "type": "object",
                             "properties": {
+                                "fallacy_name": {
+                                    "type": "string",
+                                    "description": "The latin name of the fallacy which is incorrect."
+                                },
                                 "fallacy": {
                                     "type": "string",
-                                    "description": "The string detected which is incorrect."
+                                    "description": "The text which contains the fallacy."
                                 },
                                 "correction": {
                                     "type": "string",
                                     "description": "The suggested correction of the fallacy."
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "description": "The timestamp of the fallacy."
                                 }
                             },
                             "required": ["fallacy"],
@@ -190,37 +200,83 @@ public class CorrectFallacy implements CustomTool<CorrectFallacyInput, ToolStatu
                     return;
                 }
 
+                // 1) Grab the fallacy/correction pair
                 FallacyCorrection fc = corrections.get(index);
-                EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle("🧠 Fallacy " + (index + 1))
-                    .setColor(Color.ORANGE)
-                    .setDescription("**Fallacy:** " + fc.getFallacy() +
-                        (fc.getCorrection() != null && !fc.getCorrection().isBlank()
-                            ? "\n**Correction:** " + fc.getCorrection() : ""));
 
+                // 2) Extract fields
+                String correction   = fc.getCorrection();
+                String fallacyName  = fc.getFallacyName();
+                String fallacyText  = fc.getFallacy();
+                String timestampRaw = fc.getTimestamp();
+
+                // 3) Prepare EST timestamp
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
+                String timestampEst;
+                try {
+                    LocalTime lt = LocalTime.parse(timestampRaw, formatter);
+                    ZonedDateTime zdtUtc = ZonedDateTime.of(LocalDate.now(), lt, ZoneOffset.UTC);
+                    ZonedDateTime zdtEst = zdtUtc.withZoneSameInstant(ZoneId.of("America/New_York"));
+                    timestampEst = zdtEst.format(DateTimeFormatter.ofPattern("HH:mm:ss z"));
+                } catch (Exception e) {
+                    timestampEst = "Invalid timestamp";
+                }
+
+                // 4) Build the embed
+                EmbedBuilder embed = new EmbedBuilder()
+                    .setColor(Color.ORANGE)
+                    .setTitle("🧠 Fallacy " + (index + 1))
+                    .addField("Name",            fallacyName,                          false)
+                    .addField("Fallacy",         fallacyText,                          false)
+                    .addField("Correction",      correction   != null && !correction.isBlank()
+                                                ? correction
+                                                : "—",                                false)
+                    .addField("Timestamp (EST)", timestampEst,                          false);
+
+                // 5) Define the callback
                 Consumer<Message> afterSend = sentMessage -> {
-                    // Register the pair for the listener to use
-                    
-                    messageIdToPair.put(sentMessage.getIdLong(), Pair.of(fc.getFallacy(), fc.getCorrection()));
+                    messageIdToPair.put(
+                        sentMessage.getIdLong(),
+                        Pair.of(fallacyText, correction)
+                    );
                     sentMessage.addReaction(Emoji.fromUnicode("✅")).queue();
                     sentMessage.addReaction(Emoji.fromUnicode("❌")).queue();
                     sent++;
                     accept(index + 1);
                 };
 
-                if (input.getMessageId() != null && !input.getMessageId().isBlank() && index == 0) {
-                    resolvedTextChannel.retrieveMessageById(input.getMessageId()).queue(
-                        msg -> msg.replyEmbeds(embed.build()).queue(
-                            afterSend,
-                            e -> result.complete(new ToolStatusWrapper("Failed to reply: " + e.getMessage(), false, toolCall))
-                        ),
-                        e -> result.complete(new ToolStatusWrapper("Could not find original message: " + e.getMessage(), false, toolCall))
-                    );
+                // 6) Send or reply
+                if (input.getMessageId() != null
+                    && !input.getMessageId().isBlank()
+                    && index == 0)
+                {
+                    resolvedTextChannel
+                        .retrieveMessageById(input.getMessageId())
+                        .queue(
+                            msg -> msg.replyEmbeds(embed.build()).queue(
+                                afterSend,
+                                e -> result.complete(new ToolStatusWrapper(
+                                    "Failed to reply: " + e.getMessage(),
+                                    false,
+                                    toolCall
+                                ))
+                            ),
+                            e -> result.complete(new ToolStatusWrapper(
+                                "Could not find original message: " + e.getMessage(),
+                                false,
+                                toolCall
+                            ))
+                        );
                 } else {
-                    resolvedTextChannel.sendMessageEmbeds(embed.build()).queue(
-                        afterSend,
-                        e -> result.complete(new ToolStatusWrapper("Failed to send embed: " + e.getMessage(), false, toolCall))
-                    );
+                    resolvedTextChannel
+                        .sendMessageEmbeds(embed.build())
+                        .queue(
+                            afterSend,
+                            e -> result.complete(new ToolStatusWrapper(
+                                "Failed to send embed: " + e.getMessage(),
+                                false,
+                                toolCall
+                            ))
+                        );
                 }
             }
         };

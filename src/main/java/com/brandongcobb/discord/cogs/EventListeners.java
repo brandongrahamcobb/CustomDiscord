@@ -47,7 +47,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Component
@@ -92,6 +98,13 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
     
     @Override
     public void run() {
+        LOGGER.info("Running file watcher...");
+
+        if (file.length() < lastPointer) {
+            LOGGER.warning("File was truncated or replaced. Resetting pointer.");
+            lastPointer = 0L;
+        }
+
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(lastPointer);
 
@@ -103,21 +116,29 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             }
 
             lastPointer = raf.getFilePointer();
+            LOGGER.info("Updated lastPointer to: " + lastPointer);
 
-            String[] blocks = buffer.toString().split("\r?\n\r?\n"); // individual subtitle blocks
+            String[] blocks = buffer.toString().split("\r?\n\r?\n");
+            List<String> recentBlocks = new ArrayList<>();
 
             for (String block : blocks) {
-                if (block.isBlank()) continue;
+                if (!block.isBlank()) {
+                    recentBlocks.add(block.trim());
+                }
+            }
 
-                // Send the full subtitle block to the tool for fallacy detection
-                String prompt = "Here is plaintext to be parsed for a fallacy:\n" + block.trim();
+            if (!recentBlocks.isEmpty()) {
+                String combined = "Here is plaintext to be parsed for a fallacy:\n\n"
+                                + String.join("\n\n", recentBlocks);
 
-                dis.startAlternateSequence(prompt, Long.valueOf("154749533429956608"), targetChannel)
+                dis.startAlternateSequence(combined, Long.valueOf("154749533429956608"), targetChannel)
                    .exceptionally(ex -> {
-                       LOGGER.warning("Error sending subtitle block to tool: " + ex.getMessage());
+                       LOGGER.warning("Error sending recent blocks to tool: " + ex.getMessage());
                        ex.printStackTrace();
                        return null;
                    });
+            } else {
+                LOGGER.info("No new recent blocks found.");
             }
 
         } catch (Exception e) {
@@ -125,7 +146,21 @@ public class EventListeners extends ListenerAdapter implements Cog, Runnable {
             e.printStackTrace();
         }
     }
-
+    
+    private Instant parseSRTTimeToInstant(String timeStr) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss,SSS")
+                                                           .withZone(ZoneOffset.UTC);
+            LocalTime localTime = LocalTime.parse(timeStr, formatter);
+            return Instant.now()
+                          .truncatedTo(ChronoUnit.DAYS)
+                          .plusSeconds(localTime.toSecondOfDay())
+                          .plusNanos(localTime.getNano());
+        } catch (Exception e) {
+            LOGGER.warning("Failed to parse timestamp: " + timeStr);
+            return null;
+        }
+    }
 
 
     @Override

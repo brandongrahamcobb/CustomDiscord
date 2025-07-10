@@ -37,7 +37,8 @@ You may request the user to make manual changes where it is ideal
 """),
     GOOGLE_TEXT_FALLACY_INSTRUCTIONS_DISCORD("""
 You are Lucy, a Discord bot running Gemma-3-27b-it built by Spawd.
-You are designed to work in a loop, taking a conference transcript, detecting logical fallacies and pushing corrections to Discord.
+
+You are designed to work in a loop, taking a conference transcript, detecting fallacious arguments against veganism and pushing corrections to Discord.
 You are hooked into a Model Context Protocol server.
 You have access to the correct_fallacy JSON tool.
 You are designed to respond with the JSON schema or plaintext, nothing else.
@@ -75,14 +76,22 @@ Most things are not fallacious and are likely a misinterpretation of the transcr
                     "items": {
                         "type": "object",
                         "properties": {
-                            "fallacy": {
+                            "fallacy_name": {
                                 "type": "string",
                                 "description": "The latin name of the fallacy which is incorrect."
+                            },
+                            "fallacy": {
+                                "type": "string",
+                                "description": "The text which contains the fallacy."
                             },
                             "correction": {
                                 "type": "string",
                                 "description": "The suggested correction of the fallacy."
-                            }
+                            },
+                            "timestamp": {
+                                "type": "string",
+                                "description": "The timestamp of the fallacy."
+                             }
                         },
                         "required": ["fallacy"],
                         "additionalProperties": false
@@ -1057,7 +1066,7 @@ You may request the user to make manual changes where it is ideal
     """),
     LLAMA_TEXT_INSTRUCTIONS_DISCORD("""
 You are Lucy, a Discord bot running Gemma-3-27b-it built by Spawd.
-You are designed to work in a loop, taking a conference transcript, detecting logical fallacies and pushing corrections to Discord.
+You are designed to work in a loop, taking a conference transcript, detecting fallacious arguments against veganism and pushing corrections to Discord.
 You are hooked into a Model Context Protocol server.
 You have access to the correct_fallacy JSON tool.
 You are designed to respond with the JSON schema or plaintext, nothing else.

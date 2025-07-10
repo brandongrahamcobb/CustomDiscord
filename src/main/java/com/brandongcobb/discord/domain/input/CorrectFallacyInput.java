@@ -27,7 +27,8 @@ public class CorrectFallacyInput implements ToolInput {
     private String guildId;              // The ID of the Discord guild (server)
     private String channelId;            // The channel ID where the correction is to be sent
     private String messageId;            // The snowflake ID for the referenced message (optional)
-    private List<FallacyCorrection> corrections; // A list of fallacy-correction pairs
+    private List<FallacyCorrection> corrections;
+    // A list of fallacy-correction pairs
 
     // Getters
     @Override
@@ -75,8 +76,10 @@ public class CorrectFallacyInput implements ToolInput {
 
     // Inner class representing each fallacy-correction pair
     public static class FallacyCorrection {
-        private String fallacy;        // The incorrect string
-        private String correction;     // The suggested correction (optional)
+        private String fallacy;
+        private String fallacyName;   // The incorrect string
+        private String correction;
+        private String timestamp;// The suggested correction (optional)
 
         public String getFallacy() {
             return fallacy;
@@ -84,6 +87,14 @@ public class CorrectFallacyInput implements ToolInput {
 
         public void setFallacy(String fallacy) {
             this.fallacy = fallacy;
+        }
+        
+        public String getFallacyName() {
+            return fallacyName;
+        }
+
+        public void setFallacyName(String fallacyName) {
+            this.fallacyName = fallacyName;
         }
 
         public String getCorrection() {
@@ -93,5 +104,15 @@ public class CorrectFallacyInput implements ToolInput {
         public void setCorrection(String correction) {
             this.correction = correction;
         }
+
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(String timestamp) {
+            this.timestamp = timestamp;
+        }
+
     }
 }
