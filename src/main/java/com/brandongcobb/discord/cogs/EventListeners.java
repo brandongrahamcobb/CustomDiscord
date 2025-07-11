@@ -91,7 +91,8 @@ public class EventListeners extends ListenerAdapter implements Cog {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
-        if (message.getAuthor().isBot()) return;
+        long senderId = event.getAuthor().getIdLong();
+        if (message.getAuthor().isBot() || !String.valueOf(senderId).equals(System.getenv("DISCORD_OWNER_ID")) ) return;
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
         if (prefix != null && message.getContentRaw().startsWith(prefix)) return;
         if (message.getReferencedMessage() != null &&
@@ -102,11 +103,10 @@ public class EventListeners extends ListenerAdapter implements Cog {
             message.getReferencedMessage() == null) {
             return;
         }
-        long senderId = event.getAuthor().getIdLong();
         List<Attachment> attachments = message.getAttachments();
         final boolean[] multimodal = new boolean[]{false};
         CompletableFuture<String> contentFuture = (attachments != null && !attachments.isEmpty())
-            ? mess.completeProcessAttachments(attachments).thenApply(list -> {
+            ? mess.completeProcessAttachmentsBase64(attachments).thenApply(list -> {
                 multimodal[0] = true;
                 return String.join("\n", list) + "\n" + message.getContentDisplay().replace("@Application", "");
             })

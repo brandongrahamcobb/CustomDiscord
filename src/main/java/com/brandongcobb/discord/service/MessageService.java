@@ -81,6 +81,59 @@ public class MessageService {
         return completeEditDiscordMessage(message, content);
     }
     
+    public CompletableFuture<List<String>> completeProcessAttachmentsBase64(List<Attachment> attachments) {
+        List<String> results = Collections.synchronizedList(new ArrayList<>());
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (Attachment attachment : attachments) {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    String url = attachment.getUrl();
+                    String fileName = attachment.getFileName();
+                    String contentType = attachment.getContentType();
+
+                    File tempFile = new File(tempDirectory, fileName);
+                    try (InputStream in = new URL(url).openStream()) {
+                        Files.copy(in, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                    if (contentType != null && contentType.startsWith("text/")) {
+                        String textContent = Files.readString(tempFile.toPath(), StandardCharsets.UTF_8);
+                        results.add(textContent);
+
+                    } else if (contentType != null && contentType.startsWith("image/")) {
+                        byte[] imageBytes = Files.readAllBytes(tempFile.toPath());
+                        String base64 = Base64.getEncoder().encodeToString(imageBytes);
+
+                        results.add("""
+                            {
+                              "type": "image_base64",
+                              "image_base64": {
+                                "data": "data:%s;base64,%s"
+                              }
+                            }
+                            """.formatted(contentType, base64));
+
+                    } else {
+                        results.add("Skipped non-image or non-text attachment: " + fileName);
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    results.add("Failed to process: " + attachment.getFileName());
+                }
+            });
+
+            futures.add(future);
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenApply(v -> results)
+            .exceptionally(ex -> {
+                ex.printStackTrace();
+                return List.of("Error occurred");
+            });
+    }
     public CompletableFuture<List<String>> completeProcessAttachments(List<Attachment> attachments) {
         List<String> results = Collections.synchronizedList(new ArrayList<>());
         List<CompletableFuture<Void>> futures = new ArrayList<>();
