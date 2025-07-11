@@ -24,7 +24,63 @@ public enum Instructions {
 
     GOOGLE_IMAGE_INSTRUCTIONS_DISCORD(""),
     GOOGLE_TEXT_INSTRUCTIONS_CLI(""),
-    GOOGLE_TEXT_INSTRUCTIONS_DISCORD("""
+    GOOGLE_TEXT_INSTRUCTIONS_DISCORD(""),
+    OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),
+    OPENAI_IMAGE_INSTRUCTIONS_CLI(""),
+    OPENAI_IMAGE_INSTRUCTIONS_DISCORD(""),
+    OPENAI_IMAGE_INSTRUCTIONS_TWITCH(""),
+    OPENAI_TEXT_INSTRUCTIONS_CLI(""),
+    OPENAI_TEXT_INSTRUCTIONS_DISCORD(""),
+    OPENAI_TEXT_INSTRUCTIONS_TWITCH(""),
+    OPENROUTER_TEXT_INSTRUCTIONS_CLI(""),
+    OPENROUTER_TEXT_INSTRUCTIONS_DISCORD(""),
+    OPENROUTER_TEXT_INSTRUCTIONS_TWITCH(""),
+    LMSTUDIO_TEXT_INSTRUCTIONS_CLI(""),
+    LMSTUDIO_TEXT_INSTRUCTIONS_DISCORD(""),
+    LMSTUDIO_TEXT_INSTRUCTIONS_TWITCH(""),
+    LLAMA_TEXT_INSTRUCTIONS_CLI(""),
+    LLAMA_TEXT_INSTRUCTIONS_DISCORD(""),
+    LLAMA_TEXT_INSTRUCTIONS_TWITCH(""),
+    OLLAMA_TEXT_INSTRUCTIONS_CLI(""),
+    OLLAMA_TEXT_INSTRUCTIONS_DISCORD(""),
+    OLLAMA_TEXT_INSTRUCTIONS_TWITCH("");
+
+    private final Object value;
+    
+    Instructions(Object value) {
+        this.value = value;
+    }
+    
+    public Object getValue() {
+        return value;
+    }
+    
+    public String asString() {
+        if (value instanceof String str) return str;
+        throw new IllegalStateException(name() + " is not a String");
+    }
+    
+    public Boolean asBoolean() {
+        if (value instanceof Boolean bool) return bool;
+        throw new IllegalStateException(name() + " is not a Boolean");
+    }
+    
+    public Float asFloat() {
+        if (value instanceof Float f) return f;
+        throw new IllegalStateException(name() + " is not a Float");
+    }
+    
+    public String[] asStringArray() {
+        if (value instanceof String[] arr) return arr;
+        throw new IllegalStateException(name() + " is not a String[]");
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> T asType(Class<T> clazz) {
+        return clazz.cast(value);
+    }
+}
+
 //You are Lucy, a Discord bot running Gemma-3-27b-it built by Spawd.
 //You are designed to either work in a loop, executing a user\'s task in a loop with context of a Discord server or being a simple chat bot if no task is asked of you.
 //You are hooked into a Model Context Protocol server.
@@ -522,59 +578,3 @@ public enum Instructions {
 //    "additionalProperties": false,
 //    "required": ["tool", "arguments"]
 //}
-"""),
-    OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),
-    OPENAI_IMAGE_INSTRUCTIONS_CLI(""),
-    OPENAI_IMAGE_INSTRUCTIONS_DISCORD(""),
-    OPENAI_IMAGE_INSTRUCTIONS_TWITCH(""),
-    OPENAI_TEXT_INSTRUCTIONS_CLI(""),
-    OPENAI_TEXT_INSTRUCTIONS_DISCORD(""),
-    OPENAI_TEXT_INSTRUCTIONS_TWITCH(""),
-    OPENROUTER_TEXT_INSTRUCTIONS_CLI(""),
-    OPENROUTER_TEXT_INSTRUCTIONS_DISCORD(""),
-    OPENROUTER_TEXT_INSTRUCTIONS_TWITCH(""),
-    LMSTUDIO_TEXT_INSTRUCTIONS_CLI(""),
-    LMSTUDIO_TEXT_INSTRUCTIONS_DISCORD(""),
-    LMSTUDIO_TEXT_INSTRUCTIONS_TWITCH(""),
-    LLAMA_TEXT_INSTRUCTIONS_CLI(""),
-    LLAMA_TEXT_INSTRUCTIONS_DISCORD(""),
-    LLAMA_TEXT_INSTRUCTIONS_TWITCH(""),
-    OLLAMA_TEXT_INSTRUCTIONS_CLI(""),
-    OLLAMA_TEXT_INSTRUCTIONS_DISCORD(""),
-    OLLAMA_TEXT_INSTRUCTIONS_TWITCH("");
-
-    private final Object value;
-    
-    Instructions(Object value) {
-        this.value = value;
-    }
-    
-    public Object getValue() {
-        return value;
-    }
-    
-    public String asString() {
-        if (value instanceof String str) return str;
-        throw new IllegalStateException(name() + " is not a String");
-    }
-    
-    public Boolean asBoolean() {
-        if (value instanceof Boolean bool) return bool;
-        throw new IllegalStateException(name() + " is not a Boolean");
-    }
-    
-    public Float asFloat() {
-        if (value instanceof Float f) return f;
-        throw new IllegalStateException(name() + " is not a Float");
-    }
-    
-    public String[] asStringArray() {
-        if (value instanceof String[] arr) return arr;
-        throw new IllegalStateException(name() + " is not a String[]");
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <T> T asType(Class<T> clazz) {
-        return clazz.cast(value);
-    }
-}
