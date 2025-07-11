@@ -20,7 +20,6 @@ package com.brandongcobb.discord.cogs;
 
 import com.brandongcobb.discord.Application;
 import com.brandongcobb.discord.component.bot.DiscordBot;
-import com.brandongcobb.discord.registry.FallacyRegistry;
 import com.brandongcobb.discord.registry.ModelRegistry;
 import com.brandongcobb.discord.service.AIService;
 import com.brandongcobb.discord.service.DiscordService;
