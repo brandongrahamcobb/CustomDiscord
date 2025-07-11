@@ -91,7 +91,7 @@ public class EventListeners extends ListenerAdapter implements Cog {
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
         long senderId = event.getAuthor().getIdLong();
-        if (message.getAuthor().isBot() || !String.valueOf(senderId).equals(System.getenv("DISCORD_OWNER_ID")) ) return;
+        if (message.getAuthor().isBot()) ) return;
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
         if (prefix != null && message.getContentRaw().startsWith(prefix)) return;
         if (message.getReferencedMessage() != null &&
@@ -107,9 +107,9 @@ public class EventListeners extends ListenerAdapter implements Cog {
         CompletableFuture<String> contentFuture = (attachments != null && !attachments.isEmpty())
             ? mess.completeProcessAttachments(attachments).thenApply(list -> {
                 multimodal[0] = true;
-                return String.join("\n", list) + "\n" + message.getContentDisplay().replace("@Application", "");
+                return String.join("\n", list) + "\n" + message.getContentDisplay().replace("@Disco", "");
             })
-            : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Application", ""));
+            : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Disco", ""));
         contentFuture.thenCompose(prompt ->
             dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
         ).exceptionally(ex -> {
