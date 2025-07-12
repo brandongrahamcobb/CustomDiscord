@@ -111,7 +111,7 @@ public class EventListeners extends ListenerAdapter implements Cog {
             })
             : CompletableFuture.completedFuture(message.getContentDisplay().replace("@Disco", ""));
         contentFuture.thenCompose(prompt ->
-            dis.startSequence(prompt, senderId, message.getChannel().asTextChannel())
+            dis.startSequence(prompt, senderId, message.getGuildChannel())
         ).exceptionally(ex -> {
             ex.printStackTrace();
             return null;

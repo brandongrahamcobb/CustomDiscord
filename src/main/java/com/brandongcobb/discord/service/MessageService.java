@@ -28,6 +28,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.springframework.context.annotation.Lazy;
@@ -205,9 +206,11 @@ public class MessageService {
     public CompletableFuture<Message> completeSendDiscordMessage(GuildChannel channel, String content) {
         if (channel instanceof TextChannel textChannel) {
             return textChannel.sendMessage(content).submit();
+        } else if (channel instanceof VoiceChannel voiceChannel) {
+            return voiceChannel.sendMessage(content).submit();
         } else {
             CompletableFuture<Message> failed = new CompletableFuture<>();
-            failed.completeExceptionally(new IllegalArgumentException("Channel is not a TextChannel: " + channel.getType()));
+            failed.completeExceptionally(new IllegalArgumentException("Channel is not a TextChannel or VoiceChannel: " + channel.getType()));
             return failed;
         }
     }
