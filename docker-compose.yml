@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    platform: linux/amd64
+    container_name: disco
+    env_file:
+      - /Users/spawd/.env_disco
+    volumes:
+      - ./src/main/java/com/brandongcobb/disco:/app/source
+    command: java -jar app/Application.jar

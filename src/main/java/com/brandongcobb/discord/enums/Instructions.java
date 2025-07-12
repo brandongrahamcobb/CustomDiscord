@@ -521,7 +521,8 @@ Here is the modify_guild schema for making changes to the whole guild:
     },
     "additionalProperties": false,
     "required": ["tool", "arguments"]
-}"),
+}
+    """),
     OPENAI_RESPONSES_INSTRUCTIONS_CLI(""),
     OPENAI_IMAGE_INSTRUCTIONS_CLI(""),
     OPENAI_IMAGE_INSTRUCTIONS_DISCORD(""),

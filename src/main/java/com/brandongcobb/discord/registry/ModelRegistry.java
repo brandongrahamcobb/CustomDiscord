@@ -83,7 +83,6 @@ public class ModelRegistry {
     );
     public static final Map<String, String> DISCORD_TEXT_INSTRUCTIONS = Map.ofEntries(
         Map.entry("google", Instructions.GOOGLE_TEXT_INSTRUCTIONS_DISCORD.asString()),
-        Map.entry("llama", ""),
         Map.entry("openai", Instructions.OPENAI_TEXT_INSTRUCTIONS_DISCORD.asString()),
         Map.entry("openrouter", Instructions.OPENROUTER_TEXT_INSTRUCTIONS_DISCORD.asString())
     );

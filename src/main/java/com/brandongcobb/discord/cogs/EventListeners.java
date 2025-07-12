@@ -91,7 +91,7 @@ public class EventListeners extends ListenerAdapter implements Cog {
     public void onMessageReceived(MessageReceivedEvent event) {
         Message message = event.getMessage();
         long senderId = event.getAuthor().getIdLong();
-        if (message.getAuthor().isBot()) ) return;
+        if (message.getAuthor().isBot()) return;
         String prefix = System.getenv("DISCORD_COMMAND_PREFIX");
         if (prefix != null && message.getContentRaw().startsWith(prefix)) return;
         if (message.getReferencedMessage() != null &&
