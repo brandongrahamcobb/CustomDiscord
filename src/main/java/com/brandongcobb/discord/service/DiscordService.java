@@ -425,8 +425,8 @@ public class DiscordService {
         if (userInput == null || userInput.isBlank()) {
             return CompletableFuture.completedFuture(null);
         }
-        originalDirective = "Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput;
-        chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild() + "Channel ID: " + channel.getId() + userInput));
+        originalDirective = "Guild ID:" + channel.getGuild().getIdLong() + "Channel ID: " + channel.getId() + userInput;
+        chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild().getIdLong() + "Channel ID: " + channel.getId() + userInput));
         userInput = null;
         return completeRStepWithTimeout(firstRun, channel, senderId)
             .thenCompose(resp ->
