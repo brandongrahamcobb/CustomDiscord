@@ -396,12 +396,26 @@ public class DiscordService {
         }
     }
     
+    private CompletableFuture<Void> completeLStep(long senderId, GuildChannel channel) {
+        firstRun = false;
+        LOGGER.fine("Starting L-step...");
+        return completeRStepWithTimeout(false, channel, senderId)
+            .thenCompose(resp ->
+                completeEStep(resp, false, channel, senderId)
+                    .thenCompose(eDone ->
+                        completePStep(channel, senderId)
+                            .thenCompose(pDone ->
+                                completeLStep(senderId, channel)
+                            )
+                    )
+            );
+    }
     
 
     /*
      * Full-REPL
      */
-    public CompletableFuture<Void> startSequence(String userInput, long senderId, GuildChannel channel) {
+    public CompletableFuture<Void> startLoop(String userInput, long senderId, GuildChannel channel) {
         if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
         mess.completeSendDiscordMessage(channel, "Thinking...").join();
         if (userInput == null || userInput.isBlank()) {
@@ -415,25 +429,11 @@ public class DiscordService {
                 completeEStep(resp, firstRun, channel, senderId)
                     .thenCompose(eDone ->
                         completePStep(channel, senderId)
+                            .thenCompose(pDone ->
+                                completeLStep(senderId, channel)
+                            )
                     )
             );
     }
 
-    public CompletableFuture<Void> startAlternateSequence(String userInput, long senderId, GuildChannel channel) {
-        if (senderId != Long.valueOf(System.getenv("DISCORD_OWNER_ID"))) { return null; }
-        mess.completeSendDiscordMessage(channel, "Thinking...").join();
-        if (userInput == null || userInput.isBlank()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        originalDirective = "Guild ID:" + channel.getGuild().getIdLong() + "Channel ID: " + channel.getId() + userInput;
-        chatMemory.add(String.valueOf(senderId), new AssistantMessage("Guild ID:" + channel.getGuild().getIdLong() + "Channel ID: " + channel.getId() + userInput));
-        userInput = null;
-        return completeRStepWithTimeout(firstRun, channel, senderId)
-            .thenCompose(resp ->
-                completeEStep(resp, firstRun, channel, senderId)
-                    .thenCompose(eDone ->
-                        completePStep(channel, senderId)
-                    )
-            );
-    }
 }
